@@ -1,5 +1,6 @@
-% Generate Tables to Record Daily Intake and Weight
+%**Modify to use single sheet with 'subject_fullname' as a column variable
 
+% Generate Tables to Record Daily Intake and Weight
 function intake = dailyIntakeTable(dirs, experiment, subject)
 
 %Retrieve data from logfiles
@@ -29,37 +30,33 @@ for i = 1:numel(subject)
     sessionDate = datetime(date,'format','yyyy-MM-dd');
     
     %Table variables
-    date = (startDate : sessionDate(end))'; %All set to 00:00:00 for indexing by date
-    subject_fullname = repmat(subject(i).ID,numel(date),1);
-    earned = NaN(numel(date),1);
-    supplementary = NaN(numel(date),1);
-    weight = NaN(numel(date),1);
+    Date = (startDate : sessionDate(end))'; %All set to 00:00:00 for indexing by date
+    Earned = NaN(numel(Date),1);
+    Supplementary = NaN(numel(Date),1);
+    Weight = NaN(numel(Date),1);
        
     %Load existing table and append new data
     excelPath = fullfile(dirs.save,'Daily_Intake.xls');
     if exist(excelPath,'file') && ismember(subjID,sheetnames(excelPath))
         %Update table
         T = readtable(excelPath,'Sheet',subjID);
-        newRows = abs(size(T,1)-size(date,1));
-        if size(date,1)>size(T,1)
+        newRows = abs(size(T,1)-size(Date,1));
+        if size(Date,1)>size(T,1)
             %Add rows to existing sheet
-            T2 = table(subject_fullname,date,earned,supplementary,weight);
-            idx = [false(size(date,1)-newRows,1); true(newRows,1)];
+            T2 = table(Date,Earned,Supplementary,Weight);
+            idx = [false(size(Date,1)-newRows,1); true(newRows,1)];
             T = [T; T2(idx,:)];
         else %Fill in missing values
-            T.date = (startDate : startDate+size(T,1)-1)';
+            T.Date = (startDate : startDate+size(T,1)-1)';
         end
     else
-        T = table(subject_fullname,date,earned,supplementary,weight);
+        T = table(Date,Earned,Supplementary,Weight);
     end
-    T.earned(ismember(T.date,sessionDate)) = rewEarned;
+    T.Earned(ismember(T.Date,sessionDate)) = rewEarned;
     
-    intake.(subjID) = T;
+    dataStruct.(subjID) = T;
     writetable(T,excelPath,'Sheet',subjID);
 end
 
-%Concatenate tables for use in DB
-catIntakeTables(intake,dirs.save);
-
 %Save as MAT
-save(fullfile(dirs.save,'Daily_Intake'),'-struct','intake');
+save(fullfile(dirs.save,'Daily_Intake'),'-struct','dataStruct');

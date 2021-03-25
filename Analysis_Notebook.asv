@@ -21,6 +21,7 @@ getDirs = @(experiment) struct(...
 %Generate table for daily fluid intake and weight
 if exe.dailyIntakeTable
     intake = dailyIntakeTable(getDirs([]), [], subject);
+    intakeTable = catIntakeTables(intake);
 end
 
 %Save experimental data to matfiles by subject
