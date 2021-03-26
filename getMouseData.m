@@ -1,7 +1,7 @@
-function data = getMouseData(dataPath,exper,subject)
+function data = getMouseData(dataPath,experiment,subject)
 
-if isempty(exper)
-    exper = " ";
+if isempty(experiment)
+    experiment = " ";
 end
 
 %Aggregate log data into single struct by subject
@@ -11,13 +11,13 @@ for i=1:numel(subject)
     subjID = subject(i).ID;
     if isempty(dataPath)
         dirs.data(i,:) = ...
-            fullfile('Y:','RigData','training',rigNum(i),'msiniscalchi','data',subjID);
+            fullfile('Y:','RigData','training',subject(i).rigNum,'msiniscalchi','data',subjID);
     else %Local copies by subject ID at 'dataPath'
-        dirs.data(i,:) = fullfile(dataPath,subjID);
+        dirs.data(i,:) = fullfile(dataPath.data,subjID);
     end
     
     %List data from specific experiment, or all if isempty(exper)
-    list = dir([char(fullfile(dirs.data(i,:),exper)),'*.mat']);
+    list = dir([char(fullfile(dirs.data(i,:),experiment)),'*.mat']);
     [~,idx] = sort([list.datenum]);
     data.(subjID).fnames = {list(idx).name}';
 

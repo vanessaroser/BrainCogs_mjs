@@ -1,3 +1,6 @@
+% Stand-alone function to concatenate daily intake tables
+%   -First, read workbook into struct 'intake'
+
 function T = catIntakeTables( intake, save_dir )
 
 %Concatenate tables for use in DB
