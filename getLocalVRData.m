@@ -1,4 +1,4 @@
-function data = getMouseData(dataPath,experiment,subjects)
+function data = getLocalVRData(dataPath,experiment,subjects)
 
 if isempty(experiment)
     experiment = " ";
