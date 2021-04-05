@@ -1,4 +1,4 @@
-function [dbase, dirs] = setupDataJoint(gui)
+function [dbase, dirs] = startAnimalDatabaseGUI(gui)
 
 if nargin<1
     gui = true;
