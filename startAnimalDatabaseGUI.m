@@ -1,15 +1,11 @@
-function [dbase, dirs] = startAnimalDatabaseGUI(gui)
-
-if nargin<1
-    gui = true;
-end
+function [dbase, dirs] = startAnimalDatabaseGUI()
 
 dirs = addGitRepo('General','TankMouseVR','U19-pipeline-matlab');
-setenv('DB_PREFIX', 'u19_');
+setenv('DB_PREFIX','u19_');
+setenv('DJ_USER','mjs20');
+setenv('DJ_PASS','Peace be with you');
 
-if gui
-    dbase = AnimalDatabase();
-    dbase.gui('mjs20');
-else
-    dbase = [];
+dbase = AnimalDatabase();
+dbase.gui('mjs20');
+
 end

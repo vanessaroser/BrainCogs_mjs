@@ -6,7 +6,7 @@ end
 
 %Aggregate log data into single struct by subject
 for i = 1:numel(subjects)
-    
+       
     %Subject ID, ie DB key 'subject_fullname'
     subjectID = subjects(i).ID;
     
@@ -25,7 +25,7 @@ for i = 1:numel(subjects)
     data_files = data_files(include);
     
     %Initialize output structures
-    trials(numel(data_files),1) = struct('correct',[],'error',[],'omit',[],'exclude',[]);
+    trials(numel(data_files),1) = struct('correct',[],'error',[],'omit',[]);
     
     trialData(numel(data_files),1) = struct('session_date', [],'start_time',[],'duration',[]);
     
@@ -83,8 +83,6 @@ for i = 1:numel(subjects)
             'nTrials',nTrials,'nCompleted',nCompleted,'pCorrect',pCorrect,'pOmit',pOmit,...
             'remote_path_behavior_file',session_data(i).remote_path_behavior_file);
     end
-    %Assign fields to current subject
-    subjects(i).trials      = trials;
-    subjects(i).trialData   = trialData;
-    subjects(i).sessions    = sessions;
+subjects(i).trials = trials;
+
 end
