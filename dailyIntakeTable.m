@@ -49,7 +49,7 @@ for i = 1:numel(subjects)
     watertype_name      = fillStr(subjects(i).waterType);
        
     %Load existing workbook and append new data
-    excelPath = fullfile(dirs.results,'Daily_Intake.xls');
+    excelPath = fullfile(dirs.intake,'Daily_Intake.xls');
     if exist(excelPath,'file') && ismember(subjID,sheetnames(excelPath))
         %Update table
         T = readtable(excelPath,'Sheet',subjID,'TextType','string');
@@ -86,7 +86,7 @@ subjID = fieldnames(intake);
 for i = 1:numel(subjID)
     T = [T; intake.(subjID{i})];
 end
-writetable(T,fullfile(dirs.results,'Daily_Intake_All_Subjects.xls'));
+writetable(T,fullfile(dirs.intake,'Daily_Intake_All_Subjects.xls'));
 
 %Save as MAT
-save(fullfile(dirs.results,['Daily_Intake_' dataSource]),'-struct','intake');
+save(fullfile(dirs.intake,['Daily_Intake_' dataSource]),'-struct','intake');
