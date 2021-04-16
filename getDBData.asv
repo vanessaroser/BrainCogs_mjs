@@ -67,12 +67,13 @@ if exe.performance
 end
 
 if exe.intake
-    if ~exist('block_data','var')
+    if ~exist('block_data')
         [weigh_data, block_data] = fetchIntakeData(key);
     else
         weigh_data = fetchIntakeData(key);
     end
-
+      
+    weighDate = datetime({weigh_data.weighing_time})';
     blockDate = datetime({block_data.session_date})';
     sessionDate = unique(blockDate);
     rewEarned = cell(numel(sessionDate),1);

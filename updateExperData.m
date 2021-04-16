@@ -1,11 +1,11 @@
-function fnames = updateExperData( data, dirs )
+function fnames = updateExperData( subjects, dirs )
 
 %Aggregate data from all sessions into a single struct and save
 create_dirs(dirs.results);
-subjectID = fieldnames(data);
-for i = 1:numel(subjectID)
-    fnames{i,:} = fullfile(dirs.results,subjectID{i});
+for i = 1:numel(subjects)
+    subjectID = subjects(i).ID;
+    fnames{i,:} = fullfile(dirs.results,subjectID);
     disp(['Saving ' fnames{i} '...']);
-    S = data.(subjectID{i});
+    S = subjects(i);
     save(fnames{i},'-struct','S');
 end
