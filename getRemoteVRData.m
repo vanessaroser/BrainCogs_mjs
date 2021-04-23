@@ -51,7 +51,7 @@ for i = 1:numel(subjects)
             correct = [correct,...
                 strcmp({log.block(k).trial.choice},{log.block(k).trial.trialType})];
             omit = [omit,...
-                strcmp({log.block(k).trial.choice},Choice.nil)];
+                strcmp({log.block(k).trial.choice},{Choice.nil})];
         end
         error = ~correct & ~omit;
         
