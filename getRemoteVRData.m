@@ -47,7 +47,7 @@ for i = 1:numel(subjects)
         %---Trial Data--------------------------------------------------------------------
         
         %Trial masks
-        left = []; right = []; correct = []; omit = [];
+        left = logical([]); right = logical([]); correct = logical([]); omit = logical([]);
         for k = 1:numel(log.block)
             left = [left,...
                 strcmp({log.block(k).trial.choice},{'L'})];
