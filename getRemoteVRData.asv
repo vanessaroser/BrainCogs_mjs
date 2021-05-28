@@ -47,12 +47,8 @@ for i = 1:numel(subjects)
         %---Trial Data--------------------------------------------------------------------
         
         %Trial masks
-        left = []; right = []; correct = []; omit = [];
+        correct = []; omit = [];
         for k = 1:numel(log.block)
-            left = [left,...
-                strcmp({log.block(k).trial.choice},{'L'})];
-            right = [right,...
-                strcmp({log.block(k).trial.choice},{'R'})];
             correct = [correct,...
                 strcmp({log.block(k).trial.choice},{log.block(k).trial.trialType})];
             omit = [omit,...
@@ -63,7 +59,7 @@ for i = 1:numel(subjects)
         exclude = omit; %Exclusions as trial mask
         
         trials(j) = struct(...
-            'left',left,'right',right,...
+            'left',left,'right',right,leftCues
             'correct',correct,'error',error,'omit',omit,'exclude',exclude);
         
         %---Trial data--------------------------------------------------------------------
