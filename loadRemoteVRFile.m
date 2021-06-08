@@ -7,7 +7,7 @@ end
 
 %Load remote file (from Alvaro Luna)
 key = struct();
-key.subject_fullname = subjectID;
+key.subject_fullname = char(subjectID); %Must be char, even though annotation says 'string'
 key.session_date   = sessionDate;
 data_dir = fetch(acquisition.SessionStarted & key, 'remote_path_behavior_file');
 [~, path] = lab.utils.get_path_from_official_dir(data_dir.remote_path_behavior_file);
