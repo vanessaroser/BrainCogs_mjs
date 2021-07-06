@@ -6,10 +6,10 @@
 % MJ Siniscalchi, PNI, 210629
 % --------------------------------------------------------------------------------------------------
 
-function [ trialMask, theta_track ] = getStraightNarrowTrials(position, yLimits)
+function [ trialMask, locations ] = getCollisionTrials(position, yLimits)
 
 %Limit focus to within yLimits (eg linear part of maze) 
-theta_track = cellfun(@(pos) limitRange(pos, yLimits), position, 'UniformOutput', false);
+collisions = cellfun(@(pos) limitRange(pos, yLimits), position, 'UniformOutput', false);
 
 %Index trials with reversed heading within cue region
 trialMask = cellfun(@(theta) ~any(abs(angleMPiPi(theta)) > pi/2), theta_track); 

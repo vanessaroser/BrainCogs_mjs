@@ -1,12 +1,9 @@
-function figs = fig_motorTrajectory( trajectories, plotStyle, params )
+function figs = fig_collision_locations( subjects )
 
-%Generate figure for last five sessions on sensory maze and first/last five memory
-T = trajectories;
-subjID = string(fieldnames(T));
+setup_figprops('placeholder'); %Customize for performance plots
 
 %Variables to plot
-vars = ["x_trajectory","theta_trajectory"];
-axLabels = ["X-position (cm)","Theta (rad)"];
+axLabels = "Number of occurrences";
 
 %Plotting params
 cbrew = brewColorSwatches();
@@ -15,12 +12,12 @@ alpha = 0.1;
 
 figs = gobjects(); %Initialize
 figIdx = 0;
-for i = 1:numel(subjID)
+for i = 1:numel(subjects)
     
-    sessions = T.(subjID(i));
+    sessions = subjects(i).sessions;
     for j = 1:numel(sessions)
         
-        nBlocks = numel(T.(subjID(i))(j).nLeft);
+        nBlocks = numel(sessions(j).level);
         for k = 1:nBlocks
             
             %Do not plot sessions with fewer than 10 included trials
@@ -71,11 +68,11 @@ for i = 1:numel(subjID)
                     sessionNum = find(...
                         [T.(subjID(i)).session_date]==(sessions(j).session_date));
                     entry(1) = string(['Session ', num2str(sessionNum)]);
-                    fields = ["maze_length","maxSkidAngle","nLeft","nRight"];
+                    fields = ["level","maze_length","maxSkidAngle","nLeft","nRight"];
                     for ii = 1:numel(fields)
                         entry(ii+1) = string([fields{ii},': ',num2str(sessions(j).(fields{ii})(k))]);
                     end
-                    text(txtX,txtY,entry,'FontSize',fontsize);
+                    text(txtX,txtY,entry,'FontSize',fontsize,'Interpreter','none');
                 end
                 
                 if nBlocks>1
