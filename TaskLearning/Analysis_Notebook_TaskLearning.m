@@ -2,29 +2,33 @@
 %Set paths
 close all;
 experiment = 'mjs_taskLearning_NAc_DREADD2'; %If empty, fetch data from all experiments
+
 dirs = addGitRepo('General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs');
 dirs.data = fullfile(dirs.root,'Task Learning','data');
 dirs.results = fullfile(dirs.root,'Task Learning','results',experiment);
 dirs.summary = fullfile(dirs.root,'Task Learning','summary',experiment);
 dirs.intake = fullfile(dirs.root,'Task Learning','results');
 
+create_dirs(dirs.results, dirs.summary, dirs.intake);
+
 matfiles = struct(...
     'behavioralData', @(SubjectID) fullfile(dirs.results, [SubjectID,'.mat']),... %Define function later
     'motorTrajectory', fullfile(dirs.summary,'Motor_Trajectory.mat'));
 
 %Hyperparams
-dataSource = struct('remoteLogData',true,'experimentData',false,...
+dataSource = struct('remoteLogData',false,'experimentData',true,...
     'localLogData',false,'DataJoint',false);
 exe = struct(...
     'reloadData',           true,...
-    'updateExperData',      true,...
+    'updateExperData',      false,...
     'motor_trajectory',     false,...
+    'model_strategy',       true,...
     'dailyIntakeTable',     false,...
     'writeIntake2DB',       false);
 plots = struct(...
     'motor_trajectory',             false,...
-    'collision_locations',          true,...
-    'longitudinal_performance',     false,...
+    'collision_locations',          false,...
+    'longitudinal_performance',     true,...
     'group_performance',            false);
 
 %Subject info
@@ -72,8 +76,7 @@ end
 subjects = getSessionLabels(subjects);
 
 %Exclusions
-%**M11 & M12 were switched in different rigs on 210702... 
-%   M12 (rig 1) might be used, but M11 got a premature Maze 6. Could probably just exclude...
+
 subjects = excludeBadSessions(subjects,experiment);
 
 %Generate table for daily fluid intake and weight
@@ -89,9 +92,12 @@ end
 
 %Save Stats for View-Angle and X-Trajectories
 if exe.motor_trajectory
-    create_dirs(dirs.summary);
     trajectories = getTrajectoryDist(subjects);
     save(matfiles.motorTrajectory,'-struct','trajectories');
+end
+
+if exe.model_strategy
+    subjects = analyzeTaskStrategy(subjects);
 end
 
 %Plot View-Angle and X-Trajectory for each session
@@ -110,13 +116,22 @@ end
 %Plot Individual Longitudinal Performance
 if plots.longitudinal_performance
     %Full performance data for each subject
-%     figs = fig_longitudinal_performance(subjects,'pCorrect');
-%  figs = fig_longitudinal_performance(subjects,'pCorrect','mean_pSkid');
-%  figs = fig_longitudinal_performance(subjects,'pCorrect','mean_stuckTime');
-    figs = fig_longitudinal_performance(subjects,'pCorrect','pStuck');
     saveDir = fullfile(dirs.results,'Performance');
-    save_multiplePlots(figs,saveDir);
-    clearvars figs;
+%     vars = {...
+%         {'pCorrect','mean_stuckTime'},...
+%         {'pCorrect','mean_velocity'},...
+%         {'betaCues','betaChoice'},...
+%         };
+vars = {...
+        {'betaCues','betaChoice'},...
+        };
+    
+    for i = 1:numel(vars)
+        figs = fig_longitudinal_performance(subjects,vars{i});
+        save_multiplePlots(figs,saveDir);
+        clearvars figs;
+    end
+    
 end
 
 %Plot Group Learning Curve

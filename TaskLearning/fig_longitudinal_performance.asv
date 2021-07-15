@@ -93,9 +93,8 @@ for i = 1:numel(subjects)
             case {'betaCues', 'betaChoice'}
                 pred = {'cueSide','priorChoice','bias'};
                 beta = {'betaCues','betaChoice','bias'};
-                se = subjects(i).sessions.glm.(pred(beta==vars{j}));
+                se = subjects(i).sessions.glm.(pred(beta==vars{j}))
                 for k=1:numel()
-                    
                 end
                 if j>1
                     ylabel('Regression Coef.');

@@ -32,8 +32,10 @@ for i = 1:numel(subjects)
         'collision_locations',[],'pSkid',[],'stuck_locations',[],'stuck_time',[]);
     
     trials(numel(data_files),1) = ...
-        struct('left',[],'right',[],'correct',[],'error',[],'omit',[],...
-        'forward',[],'stuck',[],'exclude',[]);
+        struct('left',[],'right',[],'leftCue',[],'rightCue',[],...
+        'correct',[],'error',[],'omit',[],...
+        'forward',[],'stuck',[],'conflict',[],'exclude',[],...
+        'blockIdx',[]);
     
     sessions(numel(data_files),1) = struct(...
         'session_date', [], 'level', [], 'reward_scale', [],'maxSkidAngle', [],...
@@ -45,20 +47,14 @@ for i = 1:numel(subjects)
     %Load each matfile and aggregate into structure
     for j = 1:numel(data_files)
         disp(['Loading ' data_files(j).remote_path_behavior_file '...']);
-        [ ~, log ] = loadRemoteVRFile( subjectID, data_files(j).session_date);
-        subjects(i).logs(j,:) = log;
+        [ ~, logs ] = loadRemoteVRFile( subjectID, data_files(j).session_date);
+        subjects(i).logs(j,:) = logs;
         
         %---Trial Data--------------------------------------------------------------------
-        
-        %Initialize variables aggregated from logs
-        [start_time, duration, position, velocity, maxSkidAngle] = deal([]);
-        %Initialize as cell
-        [theta_trajectory, x_trajectory, collision_locations, stuck_locations, pSkid, stuck_time] =...
-            deal(cell(numel(log.block),1));
-        
+                     
         %Anonymous functions for maze dimensions
-        ver = @(blockIdx) log.version(min(blockIdx,numel(log.version)));
-        maze = @(blockIdx) ver(blockIdx).mazes(log.block(blockIdx).mazeID).variable; %May change based on maze level
+        ver = @(blockIdx) logs.version(min(blockIdx,numel(logs.version)));
+        maze = @(blockIdx) ver(blockIdx).mazes(logs.block(blockIdx).mazeID).variable; %May change based on maze level
         world = @(blockIdx) ver(blockIdx).variables; %Changes with protocol
         lTrack = @(blockIdx)...
             sum(double(string({maze(blockIdx).lCue, maze(blockIdx).lMemory})));
@@ -67,14 +63,33 @@ for i = 1:numel(subjects)
         lMaze = @(blockIdx) lTrack(blockIdx) + wArm(blockIdx);
         
         %Check for empty blocks or trials and remove (discuss with Alvaro!)
-        log = removeEmpty(log,data_files(j).remote_path_behavior_file);
+        logs = removeEmpty(logs,data_files(j).remote_path_behavior_file);
         
-        for k = 1:numel(log.block)
-            Trials = log.block(k).trial;
-            start_time = [start_time; [Trials.start]'];
-            duration = [duration; [Trials.duration]'];
-            velocity = [velocity; {Trials.velocity}'];
-            position = [position; {Trials.position}'];
+        %Initialize trial variables aggregated from logs
+        blockIdx = nan(1,numel([logs.block.trial]));
+        [start_time, duration, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
+        [position, velocity, collision_locations, stuck_locations] = deal(cell(numel(blockIdx),1));
+        %Initialize as one cell per block
+        [theta_trajectory, x_trajectory] = deal(cell(numel(logs.block),1)); %Matrices: nLocation x nTrial
+        
+        %Get maximum skid angle before engagement of friction
+        maxSkidAngle = inf(1,numel(logs.block));
+        if isfield(maze(1),'maxSkidAngle') 
+            maxSkidAngle = arrayfun(@(blockIdx) str2double(maze(blockIdx).maxSkidAngle), 1:numel(logs.block)); 
+        end
+
+        firstTrial = 1; %log.block(k).firstTrial cannot be used: empty trials were removed with removeEmpty()
+        for k = 1:numel(logs.block)
+            
+            %Index for trials in current block
+            Trials = logs.block(k).trial;
+            lastTrial = firstTrial + numel(Trials) - 1;
+            blockIdx(firstTrial:lastTrial) = k;
+            
+            start_time(blockIdx==k) = [Trials.start];
+            duration(blockIdx==k)  = [Trials.duration];
+            velocity(blockIdx==k)  = cellfun(@double,{Trials.velocity},'UniformOutput',false);
+            position(blockIdx==k)  = cellfun(@double,{Trials.position},'UniformOutput',false);
             
             %X-position and view angle as matrices
             ySample = 1:lMaze(k);
@@ -82,27 +97,26 @@ for i = 1:numel(subjects)
             theta_trajectory{k} = getTrialTrajectories({Trials.position}, 'theta', ySample);
             
             %Collision locations along main stem
-            lSlide = str2double(world(k).wTrack)/2; %Set as default in stickyWalls.m
-            yLimits = [0, str2double(maze(k).lCue) - lSlide];
-            [ ~, collision_locations{k}, pSkid{k} ] =...
+            yLimits = [0, str2double(maze(k).lCue)];
+            [ ~, collision_locations(blockIdx==k), pSkid(blockIdx==k) ] =...
                 getCollisions({Trials.position}, {Trials.collision}, yLimits);
-            
+          
             %Collisions with engagement of "sticky walls"
-            if isfield(maze(k),'maxSkidAngle') && isfinite(str2double(maze(k).maxSkidAngle)) %Threshold skid angle eliciting friction
-                maxSkidAngle(k) = str2double(maze(k).maxSkidAngle);
-                resolution = 10;
-                [stuck_locations{k}, stuck_time{k}] = ...
+            resolution = 5;
+%             if isfield(Trials,'frictionEngagedVec') && 
+%                 stuck_locations(blockIdx==k) = cellfun(@(pos,fric) unique(pos(fric,1:2),'rows'),...
+%                     {Trials.position},{Trials.frictionEngagedVec},'UniformOutput',false);
+            if isfinite(maxSkidAngle(k))
+                [stuck_locations(blockIdx==k), stuck_time(blockIdx==k)] = ...
                     getStuckCollisions({Trials.position}, {Trials.collision}, yLimits, maxSkidAngle(k),resolution);
-            else
-                maxSkidAngle(k) = Inf; %Default value
-                stuck_locations{k} = cell(numel(Trials),1); %Locations where sticky-wall behavior occured, rounded in cm
-                stuck_time{k} = nan(1,numel(Trials)); %Proportion of iterations spent stuck to wall
             end
             
+            %Increment trial Idx
+            firstTrial = lastTrial+1;
         end
         
         %Concatenate as matrix if only one maze
-        if numel([log.block.mazeID])==1 || isequal(log.block.mazeID)
+        if numel([logs.block.mazeID])==1 || isequal(logs.block.mazeID)
             x_trajectory = [x_trajectory{:}];
             theta_trajectory = [theta_trajectory{:}];
         else
@@ -122,47 +136,53 @@ for i = 1:numel(subjects)
             'velocity', {velocity},...
             'collision_locations', {collision_locations},... %Unique X,Y locations of collisions at cm resolution (X simplified to -1,1 for L/R walls)
             'stuck_locations', {stuck_locations},...
-            'stuck_time', [stuck_time{:}]',... %Proportion of time stuck to sidewalls when "stickywalls" enforced
-            'pSkid', [pSkid{:}]',... %Proportion of maze in collision with sidewalls
+            'stuck_time', stuck_time,... %Proportion of time stuck to sidewalls when "stickywalls" enforced
+            'pSkid', pSkid,... %Proportion of maze in collision with sidewalls
             'mean_velocity', cell2mat(cellfun(@mean,velocity,'UniformOutput',false))); %Mean velocity across all iterations in trial (x,y,theta)
         
         %---Trial masks--------------------------------------------------------------------
         
         %Initialize
-        empty = cell(6,1);
-        empty(1:numel(empty)) = {logical([])};
-        [left, right, correct, omit, forward, stuck] = deal(empty{:});
+        [left, right, leftCue, rightCue,...
+            correct, omit, conflict, forward, stuck] = deal(false(1,numel(blockIdx)));
         
-        for k = 1:numel(log.block)
-            %Choices and outcomes
-            Trials = log.block(k).trial;
-            left = [left, strcmp({Trials.choice},{'L'})];
-            right = [right, strcmp({Trials.choice},{'R'})];
-            correct = [correct, strcmp({Trials.choice},{Trials.trialType})];
-            omit = [omit, strcmp({Trials.choice},{Choice.nil})];
+        for k = 1:numel(logs.block)
+            %Cues, choices, and outcomes
+            Trials = logs.block(k).trial;
+            leftCue(blockIdx==k) = cellfun(@(C) sum(C(1,:))>sum(C(2,:)),{Trials.cueCombo});
+            rightCue(blockIdx==k) = cellfun(@(C) sum(C(1,:))<sum(C(2,:)),{Trials.cueCombo});
+            left(blockIdx==k) = [Trials.choice]==Choice.L;
+            right(blockIdx==k) = [Trials.choice]==Choice.R;
+            correct(blockIdx==k) = [Trials.choice]==[Trials.trialType];
+            omit(blockIdx==k) = [Trials.choice]==Choice.nil;
             
-            %Find trials where mouse turns greater than pi/2 rad L or R in cue or memory segment
-            forward = [forward, getStraightNarrowTrials({Trials.position},[0,lTrack(k)])];
-            %Find trials where mouse gets stuck after collision along cue segment
-            stuck = [stuck, stuck_time{k}>0];
+            %Trials where sensory and alternation rules conflict
+            conflict(blockIdx==k) = int8([Trials.trialType]) ~= int8(rightCue(blockIdx==k))+1; %R,L choice enumeration = 1,2           
+            %Trials where mouse turns greater than pi/2 rad L or R in cue or memory segment
+            forward(blockIdx==k) = getStraightNarrowTrials({Trials.position},[0,lTrack(k)]);
+            %Trials where mouse gets stuck after collision along cue segment
+            stuck(blockIdx==k) = stuck_time(blockIdx==k)>0;
         end
         
         error = ~correct & ~omit;
         exclude = omit; %Exclusions as trial mask
+
         
         trials(j) = struct(...
-            'left',left,'right',right,...
+            'left',left,'right',right,'leftCue',leftCue,'rightCue',rightCue,...
             'correct',correct,'error',error,'omit',omit,...
-            'forward',forward,'stuck',stuck,'exclude',exclude);
+            'forward',forward,'stuck',stuck,...
+            'exclude',exclude,'conflict',conflict,...
+            'blockIdx',blockIdx);
         
         %---Session data------------------------------------------------------------------
         
         %Block data
         [reward_scale, nTrials] = deal([]); %Initialize
-        level = [log.block.mazeID];
-        for k = 1:numel(log.block)
-            reward_scale(k) = [log.block(k).trial(1).rewardScale];
-            nTrials(k)  = numel(log.block(k).trial);
+        level = [logs.block.mazeID];
+        for k = 1:numel(logs.block)
+            reward_scale(k) = [logs.block(k).trial(1).rewardScale];
+            nTrials(k)  = numel(logs.block(k).trial);
         end
         
         sessions(j) = struct(...
