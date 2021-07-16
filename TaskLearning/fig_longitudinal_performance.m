@@ -72,6 +72,12 @@ for i = 1:numel(subjects)
         p(j) = plot(X, [subjects(i).sessions.(vars{j})],...
             '.','MarkerSize',20,'Color',colors.(vars{j}),...
             'LineWidth',2,'LineStyle','none');
+        if j>1 && isequal(colors.(vars{j}),colors.(vars{j-1}))
+            set(p,'Marker','o','MarkerSize',8,'LineWidth',1.5);
+            p(1).MarkerFaceColor = colors.(vars{j});
+            p(2).MarkerFaceColor = 'none';
+            legend(p,{vars{j-1},vars{j}},'Location','northwest');
+        end
     
         switch vars{j}
             case 'pCorrect'
@@ -93,9 +99,9 @@ for i = 1:numel(subjects)
             case {'betaCues', 'betaChoice'}
                 pred = {'cueSide','priorChoice','bias'};
                 beta = {'betaCues','betaChoice','bias'};
-                se = subjects(i).sessions.glm.(pred(beta==vars{j}));
-                for k=1:numel()
-                    
+                for k=1:numel(subjects(i).sessions)
+                    se = subjects(i).sessions(k).glm.(pred{strcmp(beta,vars{j})}).se;
+                    plot([X(k),X(k)],se,'color',colors.(vars{j}));
                 end
                 if j>1
                     ylabel('Regression Coef.');
@@ -117,7 +123,7 @@ for i = 1:numel(subjects)
     title(subjects(i).ID,'interpreter','none');
 
     %Adjust height of shading as necessary
-    newVert = [max(ylim),max(ylim),min(ylim),min(ylim)];
+    newVert = [max(ylim(ax(1))),max(ylim(ax(1))),min(ylim(ax(1))),min(ylim(ax(1)))];
     for j = 1:numel(shading)
         shading(j).Vertices(:,2) = newVert;
     end
