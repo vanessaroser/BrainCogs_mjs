@@ -12,8 +12,15 @@ for i = 1:numel(subjects)
         rightPriorChoice = rightChoice(1:end-1);
         rightChoice = rightChoice(2:end);
         
+        %Additional masks for conflict trials
+        conflict = trials.conflict(~trials.omit);
+        correct = trials.correct(~trials.omit);
+        pCorrect_conflict = mean(trials.conflict(trials.correct));
+        pConflict = mean(conflict);
+        
         %Logistic regression of Choices based on Sensory Cues and Prior Choice
-        predictors = [rightCue,rightPriorChoice];
+        dummyCode = @(X) 2*(X-0.5);
+        predictors = dummyCode([rightCue, rightPriorChoice]);
         response = rightChoice;
         if isempty(predictors) || isempty(response)
             [B, stats] = assignNaN();
@@ -29,8 +36,10 @@ for i = 1:numel(subjects)
         condNum = cond(moment); %Condition number
         
         %For ill-conditioned data
-        if any(isnan(stats.p)) %~exist('B') || 
+        if any([isempty(predictors),isempty(response)]) %any(isnan(stats.p)) %~exist('B') || 
             [B, stats] = assignNaN();
+            predictors = NaN;
+            response = NaN;
         end
    
         %Assign into output structures
@@ -46,10 +55,13 @@ for i = 1:numel(subjects)
             'R_predictors',min(corrcoef(predictors),[],'all'),...
             'R_cue_choice',min(corrcoef([rightCue,response]),[],'all'),...
             'R_priorChoice_choice',min(corrcoef([rightPriorChoice,response]),[],'all'),...
+            'N',numel(response),'pRightChoice',mean(rightPriorChoice),'pRightCue',mean(rightCue),...
+            'pConflict',pConflict, pCorrect_conflict
             'conditionNum',condNum,...
             'warning',struct('msg',warnMsg,'ID',warnId));
         
         clearvars B stats
+                
     end
 end
 

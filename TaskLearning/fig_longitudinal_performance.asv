@@ -22,7 +22,7 @@ cbrew = struct(...
 colors = struct('pCorrect', cbrew.black, 'pOmit', cbrew.orange,'nCompleted', cbrew.black,...
     'mean_pSkid', cbrew.orange, 'pStuck', cbrew.orange,'mean_stuckTime', cbrew.orange, ...
     'mean_velocity', cbrew.green,...
-    'pConflict',cbrew.black,'pCorrect_conflict',cbrew.black,...
+    'pConflict',cbrew.black,'pCorrect_conflict',cbrew.red,...
     'level',[cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.red]); 
 % Plot Performance as a function of Training Day
 % one panel for each subject
@@ -77,8 +77,8 @@ for i = 1:numel(subjects)
             set(p,'Marker','o','MarkerSize',8,'LineWidth',1.5);
             p(1).MarkerFaceColor = colors.(vars{j-1});
             p(2).MarkerFaceColor = 'none';
-            if isequal(vars,{'pCorrect','pCorrect_conflict'})
-                legend(p,{'All','Conflict'},'Location','northwest');
+            if vars == {'pCorrect','pCorrect_conflict'}
+                legend(p,{vars{j-1},vars{j}},{'All','Conflict'},'Location','northwest');
             else
             legend(p,{vars{j-1},vars{j}},'Location','northwest');
             end

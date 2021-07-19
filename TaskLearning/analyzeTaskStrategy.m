@@ -12,8 +12,15 @@ for i = 1:numel(subjects)
         rightPriorChoice = rightChoice(1:end-1);
         rightChoice = rightChoice(2:end);
         
+        %Additional masks for conflict trials
+        conflict = trials.conflict(~trials.omit);
+        correct = trials.correct(~trials.omit);
+        pCorrect_conflict = mean(trials.correct(trials.conflict));
+        pConflict = mean(conflict);
+        
         %Logistic regression of Choices based on Sensory Cues and Prior Choice
-        predictors = [rightCue,rightPriorChoice];
+        dummyCode = @(X) 2*(X-0.5);
+        predictors = dummyCode([rightCue, rightPriorChoice]);
         response = rightChoice;
         if isempty(predictors) || isempty(response)
             [B, stats] = assignNaN();
@@ -52,7 +59,11 @@ for i = 1:numel(subjects)
             'conditionNum',condNum,...
             'warning',struct('msg',warnMsg,'ID',warnId));
         
+          subjects(i).sessions(j).pConflict = pConflict;
+          subjects(i).sessions(j).pCorrect_conflict = pCorrect_conflict;
+        
         clearvars B stats
+                
     end
 end
 

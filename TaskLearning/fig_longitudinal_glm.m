@@ -67,6 +67,8 @@ for i = 1:numel(subjects)
         if ismember(vars{j},{'cueSide','priorChoice','bias'})
             data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).beta, 1:numel(sessions))';
             se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
+            %Zero line
+            plot([0,numel(X)+1],[0,0],'k:','LineWidth',1);
         else
             data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}), 1:numel(sessions));
         end
@@ -82,14 +84,15 @@ for i = 1:numel(subjects)
             case {'pRightCue','pRightChoice'}
                 ylabel('Proportion of trials');
             case {'cueSide','priorChoice','bias'}
+               
                 for k = 1:numel(sessions)
                     plot([X(k),X(k)],se{k},'color',colors.(vars{j}));
                 end
                 ylabel('Regression Coef.'); 
         end
     end
-    symbols = {'o','o','^'};
-    faceColor = {colors.(vars{j}),'none',colors.(vars{j})};
+    symbols = {'o','o','_'};
+    faceColor = {colors.(vars{j}),'none','none'};
     for j = 1:numel(vars)
         set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',1.5);
         p(j).MarkerFaceColor = faceColor{j};
@@ -97,8 +100,14 @@ for i = 1:numel(subjects)
     
     %Axes scale
     xlim([0, max(X)+1]);
-    rng = max(cellfun(@max,data))-min(cellfun(@min,data));
-    ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
+    if ismember(vars{j},{'pRightChoice','pRightCue'})
+        ylim([0,1]);
+    elseif ismember(vars{j},{'cueSide','priorChoice','bias'})
+        ylim([-5, 5]);
+    else
+        rng = max(cellfun(@max,data))-min(cellfun(@min,data));
+        ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
+    end
     legend(p,vars,'Location','northwest','Interpreter','none');
     
     %Labels and titles

@@ -22,6 +22,7 @@ cbrew = struct(...
 colors = struct(...
     'cueSide', cbrew.black, 'priorChoice', cbrew.black, 'bias', cbrew.black,...
     'R_cue_choice', cbrew.red, 'R_priorChoice_choice', cbrew.red,'R_predictors', cbrew.red,...
+    'pRightCue', cbrew.red, 'pRightChoice', cbrew.red,...
     'conditionNum', cbrew.green, 'N', cbrew.green,...
     'level',[cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.red]);
 
@@ -34,7 +35,7 @@ prefix = 'GLM';
 
 for i = 1:numel(subjects)
     
-    sessions = subjects(i).sessions; 
+    sessions = subjects(i).sessions;
     
     figs(i) = figure(...
         'Name',join([prefix, subjects(i).ID, string(vars)],'_'));
@@ -54,60 +55,66 @@ for i = 1:numel(subjects)
     X = 1:numel(sessions);
     for j = 1:numel(vars)
         
-%         if numel(vars)>1 && any(ismember(vars,{'pCorrect','pOmit','betaCues','betaChoice'}))
-%             if j==1
-%                 yyaxis left
-%             else 
-%                 yyaxis right
-%             end
-%             ax(i).YAxis(j).Color = colors.(vars{j});
-%         end
-%Extract data
-if ismember(vars{j},{'cueSide','priorChoice','bias'})
-    data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).beta, 1:numel(sessions))';
-    se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
-else
-    data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}), 1:numel(sessions));
-end
-
+        %         if numel(vars)>1 && any(ismember(vars,{'pCorrect','pOmit','betaCues','betaChoice'}))
+        %             if j==1
+        %                 yyaxis left
+        %             else
+        %                 yyaxis right
+        %             end
+        %             ax(i).YAxis(j).Color = colors.(vars{j});
+        %         end
+        %Extract data
+        if ismember(vars{j},{'cueSide','priorChoice','bias'})
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).beta, 1:numel(sessions))';
+            se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
+            %Zero line
+            plot([0,numel(X)+1],[0,0],'k:','LineWidth',1);
+        else
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}), 1:numel(sessions));
+        end
+        
         p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.(vars{j}),...
             'LineWidth',2,'LineStyle','none');
-   
+        
         switch vars{j}
-            case 'nCompleted'
+            case {'N','conditionNum'}
                 ylabel('Number of trials');
+            case  {'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'}
+                 ylabel('Correlation Coef.');
+            case {'pRightCue','pRightChoice'}
+                ylabel('Proportion of trials');
             case {'cueSide','priorChoice','bias'}
+               
                 for k = 1:numel(sessions)
                     plot([X(k),X(k)],se{k},'color',colors.(vars{j}));
                 end
-                ylabel('Regression Coef.');
-                
+                ylabel('Regression Coef.'); 
         end
     end
-    symbols = {'o','o','^'};
-    faceColor = {colors.(vars{j}),'none',colors.(vars{j})};
-    for j = 1:numel(vars)            
-            set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',1.5);
-            p(j).MarkerFaceColor = faceColor{j};
-            
-            
+    symbols = {'^','^','o'};
+    faceColor = {colors.(vars{j}),'none','none'};
+    for j = 1:numel(vars)
+        set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',1.5);
+        p(j).MarkerFaceColor = faceColor{j};
     end
     
     %Axes scale
     xlim([0, max(X)+1]);
-    rng = max(data{:})-min(data{:});
-    ylim([min(data),max(data)]+0.1*rng*[-1,1]);
-    
-    legend(p,vars,'Location','northwest');
-    
-   
-    
+    if ismember(vars{j},{'pRightChoice','pRightCue'})
+        ylim([0,1]);
+    elseif ismember(vars{j},{'cueSide','priorChoice','bias'})
+        ylim([-5, 5]);
+    else
+        rng = max(cellfun(@max,data))-min(cellfun(@min,data));
+        ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
+    end
+    legend(p,vars,'Location','northwest','Interpreter','none');
     
     %Labels and titles
     xlabel('Session number');
-
+    
     title(subjects(i).ID,'interpreter','none');
-
+    
     %Adjust height of shading as necessary
     newVert = [max(ylim(ax(1))),max(ylim(ax(1))),min(ylim(ax(1))),min(ylim(ax(1)))];
     for j = 1:numel(shading)
