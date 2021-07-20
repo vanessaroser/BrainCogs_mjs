@@ -19,11 +19,15 @@ for i = 1:numel(subjects)
         pConflict = mean(conflict);
         
         %Logistic regression of Choices based on Sensory Cues and Prior Choice
+<<<<<<< Updated upstream
         dummyCode = @(X) 2*(X-0.5);
         predictors = dummyCode([rightCue, rightPriorChoice]);
+=======
+        predictors = [rightCue, rightPriorChoice];
+>>>>>>> Stashed changes
         response = rightChoice;
         if isempty(predictors) || isempty(response)
-            [B, stats] = assignNaN();
+            [B, stats.beta, stats.se, stats.p] = deal(NaN(3,1));
         else
             lastwarn(''); % Clear last warning message
             [B,~,stats] = glmfit(predictors,response,'binomial','link','logit');
@@ -35,27 +39,30 @@ for i = 1:numel(subjects)
         moment = X'*X; %Moment matrix of regressors
         condNum = cond(moment); %Condition number
         
-        %For ill-conditioned data
-        if any([isempty(predictors),isempty(response)]) %any(isnan(stats.p)) %~exist('B') || 
-            [B, stats] = assignNaN();
-            predictors = NaN;
-            response = NaN;
+        %**Temporary: a couple sessions have <3 trials**
+        %   future: prior exclusion of early sessions with few trials (rare)
+        if any([isempty(predictors),isempty(response)])
+            [B, stats.beta, stats.se, stats.p] = deal(NaN(3,1));
+            [predictors, response] = deal(NaN);
         end
-   
+        
         %Assign into output structures
         subjects(i).sessions(j).betaCues= B(2);
         subjects(i).sessions(j).betaChoice = B(3);
         subjects(i).sessions(j).bias = B(1);
         
         Stats = @(term) struct(...
-            'beta',stats.beta(term),'se',stats.beta(term)+[-1,1]*stats.se(term),'p',stats.p(term));
+            'beta', stats.beta(term),...
+            'se',stats.beta(term) + [-1,1]*stats.se(term),... %B -/+ SE
+            'p',stats.p(term));
         
         subjects(i).sessions(j).glm = struct(...
-            'cueSide',Stats(2),'priorChoice',Stats(3),'bias',Stats(1),...
-            'R_predictors',min(corrcoef(predictors),[],'all'),...
-            'R_cue_choice',min(corrcoef([rightCue,response]),[],'all'),...
-            'R_priorChoice_choice',min(corrcoef([rightPriorChoice,response]),[],'all'),...
-            'N',numel(response),'pRightChoice',mean(rightPriorChoice),'pRightCue',mean(rightCue),...
+            'bias',Stats(1),'cueSide',Stats(2),'priorChoice',Stats(3),...
+            'R_predictors', min(corrcoef(predictors),[],'all'),... %Excludes diagonal ones
+            'R_cue_choice', min(corrcoef([rightCue,response]),[],'all'),...
+            'R_priorChoice_choice', min(corrcoef([rightPriorChoice,response]),[],'all'),...
+            'N',numel(response),...
+            'pRightChoice',mean(rightPriorChoice),'pRightCue',mean(rightCue),...
             'conditionNum',condNum,...
             'warning',struct('msg',warnMsg,'ID',warnId));
         
@@ -66,9 +73,3 @@ for i = 1:numel(subjects)
                 
     end
 end
-
-function [B, stats] = assignNaN()
-B = NaN(3,1);
-stats = struct('beta',NaN(3,1),'se',NaN(3,1),'p',NaN(3,1));
-
-% msg = arrayfun(@(sessionID) subjects(1).sessions(sessionID).glm.warning.msg,1:numel(subjects(1).sessions),'UniformOutput',false);

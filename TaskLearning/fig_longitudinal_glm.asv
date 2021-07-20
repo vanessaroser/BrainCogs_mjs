@@ -23,7 +23,11 @@ colors = struct(...
     'cueSide', cbrew.black, 'priorChoice', cbrew.black, 'bias', cbrew.black,...
     'R_cue_choice', cbrew.red, 'R_priorChoice_choice', cbrew.red,'R_predictors', cbrew.red,...
     'pRightCue', cbrew.red, 'pRightChoice', cbrew.red,...
+<<<<<<< Updated upstream
     'conditionNum', cbrew.green, 'N', cbrew.green,...
+=======
+    'conditionNum', cbrew.green, 'N', cbrew.black,...
+>>>>>>> Stashed changes
     'level',[cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.red]);
 
 % Plot Performance as a function of Training Day
@@ -40,7 +44,7 @@ for i = 1:numel(subjects)
     figs(i) = figure(...
         'Name',join([prefix, subjects(i).ID, string(vars)],'_'));
     tiledlayout(1,1);
-    ax(i) = nexttile();
+    ax = nexttile();
     hold on;
     
     levels = cellfun(@min,{subjects(i).sessions.level});
@@ -67,6 +71,7 @@ for i = 1:numel(subjects)
         if ismember(vars{j},{'cueSide','priorChoice','bias'})
             data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).beta, 1:numel(sessions))';
             se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
+<<<<<<< Updated upstream
             %Zero line
             plot([0,numel(X)+1],[0,0],'k:','LineWidth',1);
         else
@@ -79,6 +84,26 @@ for i = 1:numel(subjects)
         switch vars{j}
             case {'N','conditionNum'}
                 ylabel('Number of trials');
+=======
+        else
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}), 1:numel(sessions));
+        end
+       
+        if numel(vars)>1 && any(ismember(vars,{'N','conditionNum'}))
+            if j==1
+                yyaxis left
+            else
+                yyaxis right
+            end
+            ax.YAxis(j).Color = colors.(vars{j});
+        end
+        
+        switch vars{j}
+            case 'N'
+                ylabel('Number of trials');
+            case 'conditionNum'
+                 ylabel('Condition number for X''X');
+>>>>>>> Stashed changes
             case  {'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'}
                  ylabel('Correlation Coef.');
             case {'pRightCue','pRightChoice'}
@@ -89,17 +114,30 @@ for i = 1:numel(subjects)
                     plot([X(k),X(k)],se{k},'color',colors.(vars{j}));
                 end
                 ylabel('Regression Coef.'); 
+<<<<<<< Updated upstream
         end
     end
     symbols = {'^','^','o'};
     faceColor = {colors.(vars{j}),'none','none'};
     for j = 1:numel(vars)
+=======
+        end    
+        
+        p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.(vars{j}),...
+            'LineWidth',2,'LineStyle','none');
+    end
+     
+    symbols = {'o','o','^'};
+    for j = 1:numel(vars)
+        faceColor = {colors.(vars{j}),'none','none'};
+>>>>>>> Stashed changes
         set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',1.5);
         p(j).MarkerFaceColor = faceColor{j};
     end
     
     %Axes scale
     xlim([0, max(X)+1]);
+<<<<<<< Updated upstream
     if ismember(vars{j},{'pRightChoice','pRightCue'})
         ylim([0,1]);
     elseif ismember(vars{j},{'cueSide','priorChoice','bias'})
@@ -109,6 +147,11 @@ for i = 1:numel(subjects)
         ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
     end
     legend(p,vars,'Location','northwest','Interpreter','none');
+=======
+    rng = max(cellfun(@max,data))-min(cellfun(@min,data));
+    ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
+    legend(p,vars,'Location','best','Interpreter','none');
+>>>>>>> Stashed changes
     
     %Labels and titles
     xlabel('Session number');
@@ -116,7 +159,11 @@ for i = 1:numel(subjects)
     title(subjects(i).ID,'interpreter','none');
     
     %Adjust height of shading as necessary
-    newVert = [max(ylim(ax(1))),max(ylim(ax(1))),min(ylim(ax(1))),min(ylim(ax(1)))];
+    maxY = max([ax.YAxis(:).Limits])
+    if numel(ax.YAxis)
+    ax.YAxis(1).Limits
+    newVert = [max(ylim(ax(1))),max(ylim(ax(1))),...
+        min(ylim(ax(1))),min(ylim(ax(1)))];
     for j = 1:numel(shading)
         shading(j).Vertices(:,2) = newVert;
     end

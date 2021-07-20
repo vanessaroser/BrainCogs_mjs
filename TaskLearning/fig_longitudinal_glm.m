@@ -23,7 +23,7 @@ colors = struct(...
     'cueSide', cbrew.black, 'priorChoice', cbrew.black, 'bias', cbrew.black,...
     'R_cue_choice', cbrew.red, 'R_priorChoice_choice', cbrew.red,'R_predictors', cbrew.red,...
     'pRightCue', cbrew.red, 'pRightChoice', cbrew.red,...
-    'conditionNum', cbrew.green, 'N', cbrew.green,...
+    'conditionNum', cbrew.green, 'N', cbrew.black,...
     'level',[cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.red]);
 
 % Plot Performance as a function of Training Day
@@ -40,7 +40,7 @@ for i = 1:numel(subjects)
     figs(i) = figure(...
         'Name',join([prefix, subjects(i).ID, string(vars)],'_'));
     tiledlayout(1,1);
-    ax(i) = nexttile();
+    ax = nexttile();
     hold on;
     
     levels = cellfun(@min,{subjects(i).sessions.level});
@@ -72,13 +72,26 @@ for i = 1:numel(subjects)
         else
             data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm.(vars{j}), 1:numel(sessions));
         end
-        
-        p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.(vars{j}),...
-            'LineWidth',2,'LineStyle','none');
+       
+        if numel(vars)>1 && any(ismember(vars,{'N','conditionNum'}))
+            if j==1
+                yyaxis left
+            else
+                yyaxis right
+            end
+            ax.YAxis(j).Color = colors.(vars{j});
+        else
+            %Axes scale
+            xlim([0, max(X)+1]);
+            rng = max(cellfun(@max,data))-min(cellfun(@min,data));
+            ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
+        end
         
         switch vars{j}
-            case {'N','conditionNum'}
+            case 'N'
                 ylabel('Number of trials');
+            case 'conditionNum'
+                 ylabel('Condition number for X''X');
             case  {'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'}
                  ylabel('Correlation Coef.');
             case {'pRightCue','pRightChoice'}
@@ -89,14 +102,26 @@ for i = 1:numel(subjects)
                     plot([X(k),X(k)],se{k},'color',colors.(vars{j}));
                 end
                 ylabel('Regression Coef.'); 
-        end
+        end    
+
+        p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.(vars{j}),...
+            'LineWidth',2,'LineStyle','none');
     end
+<<<<<<< Updated upstream
     symbols = {'o','o','_'};
     faceColor = {colors.(vars{j}),'none','none'};
+=======
+    %Axes scale
+    xlim([0, max(X)+1]);
+     
+    symbols = {'o','o','^'};
+>>>>>>> Stashed changes
     for j = 1:numel(vars)
+        faceColor = {colors.(vars{j}),'none','none'};
         set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',1.5);
         p(j).MarkerFaceColor = faceColor{j};
     end
+<<<<<<< Updated upstream
     
     %Axes scale
     xlim([0, max(X)+1]);
@@ -109,6 +134,10 @@ for i = 1:numel(subjects)
         ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
     end
     legend(p,vars,'Location','northwest','Interpreter','none');
+=======
+         
+    legend(p,vars,'Location','best','Interpreter','none');
+>>>>>>> Stashed changes
     
     %Labels and titles
     xlabel('Session number');
@@ -116,7 +145,15 @@ for i = 1:numel(subjects)
     title(subjects(i).ID,'interpreter','none');
     
     %Adjust height of shading as necessary
-    newVert = [max(ylim(ax(1))),max(ylim(ax(1))),min(ylim(ax(1))),min(ylim(ax(1)))];
+    if numel(ax.YAxis)==2
+        ax.YAxis(1).Limits = [0, max(ax.YAxis(1).Limits)]; %Set min to zero
+        ax.YAxis(2).Limits = [0, max(ax.YAxis(2).Limits)];
+    end
+    maxY = max([ax.YAxis(1).Limits]);
+    minY = min([ax.YAxis(1).Limits]);
+    newVert = [maxY,maxY,minY,minY];
+%     newVert = [max(ylim(ax(1))),max(ylim(ax(1))),...
+%         min(ylim(ax(1))),min(ylim(ax(1)))];
     for j = 1:numel(shading)
         shading(j).Vertices(:,2) = newVert;
     end
