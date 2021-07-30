@@ -22,15 +22,20 @@ exe = struct(...
     'reloadData',           true,...
     'updateExperData',      true,...
     'motor_trajectory',     false,...
-    'model_strategy',       true,...
+    'model_strategy',       false,...
     'dailyIntakeTable',     false,...
     'writeIntake2DB',       false);
 plots = struct(...
-    'motor_trajectory',             false,...
-    'collision_locations',          false,...
-    'longitudinal_performance',     false,...
-    'glm',                          true,...
-    'group_performance',            false);
+    'motor_trajectory',                 false,...
+    'collision_locations',              false,...
+    'trial_duration',                   true,...
+    'longitudinal_performance',         false,...
+    'longitudinal_glm_choice_outcome',  false,...
+    'glm_cueSide_priorChoice',          false,... %Probably not needed after including glm_choice_outcome
+    'glm_choice_outcome',               false,...
+    'glm_choice_conflict',              false,...
+    'choice_autocorrelation',           false,...
+    'group_performance',                false);
 
 %Subject info
 if exe.reloadData
@@ -65,19 +70,16 @@ elseif dataSource.experimentData
 elseif dataSource.localLogData
 end
 
+%Append Labels for Session Types
+subjects = getSessionLabels(subjects);
+
+%Exclusions
+subjects = excludeBadSessions(subjects,experiment);
+
 %Save experimental data to matfiles by subject
 if exe.updateExperData % && ~dataSource.experimentData
     fnames = updateExperData(subjects,dirs); 
 end
-
-%Append Labels for Session Types
-%*** Put these labels in subjects.sessions ***
-%   sessions(i).manipulation = CNO dose, etc
-%   sessions(i).sessionType = {shaping, sensory, alternation...}
-subjects = getSessionLabels(subjects);
-
-%Exclusions
-% subjects = excludeBadSessions(subjects,experiment);
 
 %Generate table for daily fluid intake and weight
 if exe.dailyIntakeTable
@@ -113,15 +115,31 @@ if plots.motor_trajectory
     clearvars figs;
 end
 
+if plots.collision_locations
+    figs = fig_collision_locations(subjects);
+    saveDir = fullfile(dirs.results,'Motor Trajectories');
+    save_multiplePlots(figs,saveDir);
+    clearvars figs;
+end
+
+if plots.trial_duration
+    saveDir = fullfile(dirs.results,'Trial Duration');
+    figs = fig_longitudinal_trialDuration( subjects );
+    save_multiplePlots(figs,saveDir);
+    clearvars figs;
+end
+
+
 %Plot Individual Longitudinal Performance
 if plots.longitudinal_performance
     %Full performance data for each subject
     saveDir = fullfile(dirs.results,'Performance');
-    vars = {...
-        {'pCorrect','pCorrect_conflict'},...
-        {'pCorrect_conflict','pConflict'},...
-        };
-    
+%     vars = {...
+%         {'pCorrect','pOmit'},...'pCorrect', cbrew.black, 'pOmit'
+%         {'pCorrect','mean_stuckTime'},...
+%         {'pCorrect','pCorrect_conflict'},...
+%         };
+vars = {{'pCorrect','pCorrect_conflict'}};
     for i = 1:numel(vars)
         figs = fig_longitudinal_performance(subjects,vars{i});
         save_multiplePlots(figs,saveDir);
@@ -130,39 +148,61 @@ if plots.longitudinal_performance
     
 end
 
-if plots.glm
-    %Full performance data for each subject
+if plots.glm_cueSide_priorChoice
     saveDir = fullfile(dirs.results,'GLM');
     vars = {...
         {'cueSide','priorChoice','bias'},...
         {'R_cue_choice', 'R_priorChoice_choice', 'R_predictors'},...
         {'pRightChoice', 'pRightCue'},...
-        {'N','conditionNum'},...
-        };
-    
+        };    
     for i = 1:numel(vars)
         figs = fig_longitudinal_glm(subjects,vars{i});
         save_multiplePlots(figs,saveDir);
         clearvars figs;
-    end
+    end  
+end
+
+if plots.glm_choice_outcome
+    %For each session
+    saveDir = fullfile(dirs.results,'GLM_Choice_Outcome');
+    figs = fig_glm_choice_outcome(subjects,'glm3');
+    save_multiplePlots(figs,saveDir);
+    clearvars figs;
+end
+
+if plots.longitudinal_glm_choice_outcome
+    %Longitudinal
+    saveDir = fullfile(dirs.results,'GLM_Choice_Outcome');
+    vars = {'cueSide','rewChoice','unrewChoice','bias'};   
+    figs{1} = fig_longitudinal_glm_choice_outcome( subjects, vars );
+    figs{2} = fig_choice_autocorrelation(subjects);
+    save_multiplePlots([figs{:}],saveDir);
+    clearvars figs;
+%Check for warning messages
+%W = arrayfun(@(idx) isfield(S(idx).glm3,'warning'), 1:numel(S));
+end
+
+if plots.glm_choice_conflict
+    saveDir = fullfile(dirs.results,'GLM_Choice_Conflict');
+    vars = {{'congruent','conflict','bias'}};   
+%     vars = {...
+%         {'Congruent','Conflict','bias'},...
+%         {'pRightChoice', 'pConflict', 'pReward'},...
+%         {'R_predictors','R_conflict_choice', 'R_congruent_choice'},...
+%         {'N', 'conditionNum'},...
+%         };   
     
+    for i = 1:numel(vars)
+        figs = fig_glm_choice_conflict(subjects,vars{i});
+        save_multiplePlots(figs,saveDir);
+        clearvars figs;
+    end    
 end
 
 %Plot Group Learning Curve
 if plots.group_performance
-
     saveDir = fullfile(dirs.results,'Group Performance');
     save_multiplePlots(figs,saveDir);
     clearvars figs;
 end
 
-if plots.collision_locations
-    %Full performance data for each subject
-%     figs = fig_longitudinal_performance(subjects,'pCorrect');
-%  figs = fig_longitudinal_performance(subjects,'pCorrect','mean_pSkid');
-%  figs = fig_longitudinal_performance(subjects,'pCorrect','mean_stuckTime');
-    figs = fig_collision_locations(subjects);
-    saveDir = fullfile(dirs.results,'Motor Trajectories');
-    save_multiplePlots(figs,saveDir);
-    clearvars figs;
-end

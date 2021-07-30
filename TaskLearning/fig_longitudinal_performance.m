@@ -9,21 +9,13 @@ setup_figprops('placeholder'); %Customize for performance plots
 figs = gobjects(0);
 
 %Plotting params
-lineWidth = 2;
+lineWidth = 1;
 shadeOffset = 0.2;
 transparency = 0.2;
 
 %Colors
-c = cbrewer('qual','Paired',10); c2 = cbrewer('qual','Set1',9);
-cbrew = struct(...
-    'red',c(6,:),'red2',c(5,:),'blue',c(2,:),'blue2',c(1,:),'green',c(4,:),'green2',c(3,:),...
-    'purple',c(10,:),'purple2',c(9,:),'orange',c(8,:),'orange2',c(7,:),'black',[0,0,0],'gray',c2(9,:));
+colors = setPlotColors(brewColorSwatches);
 
-colors = struct('pCorrect', cbrew.black, 'pOmit', cbrew.orange,'nCompleted', cbrew.black,...
-    'mean_pSkid', cbrew.orange, 'pStuck', cbrew.orange,'mean_stuckTime', cbrew.orange, ...
-    'mean_velocity', cbrew.green,...
-    'pConflict',cbrew.black,'pCorrect_conflict',cbrew.black,...
-    'level',[cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.blue; cbrew.red]); 
 % Plot Performance as a function of Training Day
 % one panel for each subject
 
@@ -32,22 +24,14 @@ colors = struct('pCorrect', cbrew.black, 'pOmit', cbrew.orange,'nCompleted', cbr
 prefix = 'Performance';
 
 for i = 1:numel(subjects)
-    
+    %Performance as a function of training day
     figs(i) = figure(...
         'Name',join([prefix, subjects(i).ID, string(vars)],'_'));
     tiledlayout(1,1);
-    ax(i) = nexttile();
+    ax = nexttile();
     hold on;
     
-        % Shade according to different phases of training
-%     values = [subjects(i).sessions.maxSkidAngle];
-%     values = unique(values(isfinite(values)));
-%     for j = 1:numel(values)
-%         maxAngleSessions = ... % Sessions at each max skid angle
-%             cellfun(@min,{subjects(i).sessions.maxSkidAngle}) <= values(j);
-%         shadeDomain(find(maxAngleSessions),...
-%             [0,1], shadeOffset, cbrew.orange, transparency);
-%     end
+    % Shade according to different phases of training
     levels = cellfun(@min,{subjects(i).sessions.level});
     values = unique(levels(isfinite(levels)));
     for j = 1:numel(values)
@@ -55,35 +39,46 @@ for i = 1:numel(subjects)
         shading(j) = shadeDomain(find(pastLevels),...
             ylim, shadeOffset, colors.level(values(j),:), transparency);
     end
-    
-    %Performance as a function of training day
-    X = 1:numel(subjects(i).sessions);
-    for j = 1:numel(vars)
         
+    %Line at 0.5 for proportional quantities
+    X = 1:numel(subjects(i).sessions);
+    if all(ismember(vars,{'pCorrect','pCorrect_conflict','pOmit'}))
+        plot([0,X(end)+1],[0.5, 0.5],...
+            ':k','LineWidth',1);
+    end
+
+    yyax = {'left','right'};
+    for j = 1:numel(vars)
+        %Dual Y-axes or 0.5 line for proportional quantities
         if numel(vars)>1 && any(~ismember(vars,...
-                {'pCorrect','pCorrect_conflict','pOmit','betaCues','betaChoice'}))
-            if j==1
-                yyaxis left
-            else 
-                yyaxis right
-            end
-            ax(i).YAxis(j).Color = colors.(vars{j});
+                {'pCorrect','pCorrect_conflict','pOmit'}))
+            yyaxis(ax,yyax{j});
+            ax.YAxis(j).Color = colors.(vars{j});
         end
         
         p(j) = plot(X, [subjects(i).sessions.(vars{j})],...
             '.','MarkerSize',20,'Color',colors.(vars{j}),...
-            'LineWidth',2,'LineStyle','none');
-        if j>1 %&& isequal(colors.(vars{j}),colors.(vars{j-1}))
-            set(p,'Marker','o','MarkerSize',8,'LineWidth',1.5);
-            p(1).MarkerFaceColor = colors.(vars{j-1});
-            p(2).MarkerFaceColor = 'none';
-            if isequal(vars,{'pCorrect','pCorrect_conflict'})
-                legend(p,{'All','Conflict'},'Location','northwest');
-            else
-            legend(p,{vars{j-1},vars{j}},'Location','northwest');
+            'LineWidth',lineWidth,'LineStyle','none');
+        
+        marker = {'o','o','_'};
+        faceColor = {colors.(vars{j}),'none','none'};
+        if numel(vars)>1 %&& isequal(colors.(vars{j}),colors.(vars{j-1}))
+            set(p(j),'Marker',marker{j},...
+                'MarkerSize',8,...
+                'MarkerFaceColor',faceColor{j},...
+                'LineWidth',lineWidth);
+            if j==numel(vars)
+                if isequal(vars,{'pCorrect','pCorrect_conflict'})
+                    if  ~all(isnan([subjects(i).sessions.pCorrect_conflict]))
+                        legend(p,{'All','Conflict'},'Location','northwest');
+                    end
+                else
+                    legendVars = cellfun(@(C) ~all(isnan([subjects(i).sessions.(C)])), vars);
+                    legend(p,vars{legendVars},'Location','northwest');
+                end
             end
         end
-    
+        
         switch vars{j}
             case {'pCorrect','pCorrect_conflict'}
                 ylabel('Accuracy');
@@ -103,16 +98,17 @@ for i = 1:numel(subjects)
                 ylabel('Number of completed trials');
         end
     end
+
     
-   
     %Axes scale
+    ax.PlotBoxAspectRatio = [3,2,1];
     xlim([0, max(X)+1]);
     
     %Labels and titles
     xlabel('Session number');
-
+    
     title(subjects(i).ID,'interpreter','none');
-
+    
     %Adjust height of shading as necessary
     newVert = [max(ylim(ax(1))),max(ylim(ax(1))),min(ylim(ax(1))),min(ylim(ax(1)))];
     for j = 1:numel(shading)

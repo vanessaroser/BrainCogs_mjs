@@ -1,4 +1,4 @@
-function figs = fig_longitudinal_glm( subjects, vars_cell )
+function figs = fig_longitudinal_glm_choice_outcome( subjects, vars_cell )
 
 % vars = struct('pCorrect',false,'pOmit',false,'mean_velocity',false);
 for i = 1:numel(vars_cell)
@@ -15,13 +15,7 @@ transparency = 0.2;
 
 %Colors
 colors = setPlotColors(brewColorSwatches);
-
-% Plot Performance as a function of Training Day
-% one panel for each subject
-
-%Load performance data
-% for the future let's parse relevant data before saving as MAT
-prefix = 'GLM';
+ prefix = 'longitudinal_GLM';
 
 for i = 1:numel(subjects)
     
@@ -45,11 +39,11 @@ for i = 1:numel(subjects)
     X = 1:numel(sessions);
     for j = 1:numel(vars)
         %Extract data
-        if ismember(vars{j},{'cueSide','priorChoice','bias'})
-            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm1.(vars{j}).beta, 1:numel(sessions))';
-            se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm1.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
+        if ismember(vars{j},{'cueSide','rewChoice','unrewChoice','bias'})
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm2.(vars{j}).beta, 1:numel(sessions))';
+            se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm2.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
         else
-            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm1.(vars{j}), 1:numel(sessions));
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm2.(vars{j}), 1:numel(sessions));
         end
        
         if numel(vars)>1 && any(ismember(vars,{'N','conditionNum'}))
@@ -66,7 +60,7 @@ for i = 1:numel(subjects)
             ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
         end
         
-        if ismember(vars{j},{'cueSide','priorChoice','bias'})
+        if ismember(vars{j},{'cueSide','rewChoice','unrewChoice','bias'})
             for k = 1:numel(sessions)
                 plot([X(k),X(k)],se{k},'color',colors.(vars{j}),'LineWidth',lineWidth);
             end
@@ -85,7 +79,7 @@ for i = 1:numel(subjects)
                 case {'pRightCue','pRightChoice'}
                     plot([0,numel(X)+1],[0.5, 0.5],'k:','LineWidth',1);   %0.5 line
                     ylabel('Proportion of trials');
-                case {'cueSide','priorChoice','bias'}
+                case {'cueSide','rewChoice','unrewChoice','bias'}
                     plot([0,numel(X)+1],[0, 0],'k:','LineWidth',1);   %Zero line
                     ylabel('Regression Coef.');
             end
@@ -95,11 +89,12 @@ for i = 1:numel(subjects)
     end
      
     %Simplify markers/colors for >2 vars
-    symbols = {'o','o','_'};
+    symbols = {'o','^','^','_'};
     for j = 1:numel(vars)
-        faceColor = {colors.(vars{j}),'none','none'};
+        faceColor = {'none',colors.(vars{j}),colors.(vars{j}),'none'};
         set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',lineWidth);
-        p(j).MarkerFaceColor = faceColor{j};
+        %         p(j).MarkerFaceColor = faceColor{j};
+        p(j).MarkerFaceColor = 'none';
     end
 
     %Axes scale
@@ -110,7 +105,7 @@ for i = 1:numel(subjects)
         ylim([0,1]);
     elseif ismember(vars{j},{'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'})
         ylim([-1, 1]);
-    elseif ismember(vars{j},{'cueSide','priorChoice','bias'})
+    elseif ismember(vars{j},{'cueSide','rewChoice','unrewChoice','bias'})
         ylim([-5, 5]);
     else
         rng = max(cellfun(@max,data))-min(cellfun(@min,data));

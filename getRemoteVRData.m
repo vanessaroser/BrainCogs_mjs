@@ -33,8 +33,8 @@ for i = 1:numel(subjects)
     
     trials(numel(data_files),1) = ...
         struct('left',[],'right',[],'leftCue',[],'rightCue',[],...
-        'correct',[],'error',[],'omit',[],...
-        'forward',[],'stuck',[],'conflict',[],'exclude',[],...
+        'correct',[],'error',[],'omit',[],'congruent',[],'conflict',[],...
+        'forward',[],'stuck',[],'exclude',[],...
         'blockIdx',[]);
     
     sessions(numel(data_files),1) = struct(...
@@ -85,11 +85,15 @@ for i = 1:numel(subjects)
             Trials = logs.block(k).trial;
             lastTrial = firstTrial + numel(Trials) - 1;
             blockIdx(firstTrial:lastTrial) = k;
-            
             start_time(blockIdx==k) = [Trials.start];
-            duration(blockIdx==k)  = [Trials.duration];
-            velocity(blockIdx==k)  = cellfun(@double,{Trials.velocity},'UniformOutput',false);
-            position(blockIdx==k)  = cellfun(@double,{Trials.position},'UniformOutput',false);
+            
+            %Calculate duration from trial start to choice (exclude ITI)
+            duration(blockIdx==k)  = arrayfun(@(idx) Trials(idx).time(Trials(idx).iterations), 1:numel(Trials));
+            %duration(blockIdx==k)  = [Trials.duration];
+            
+            %Running velocity and position
+            velocity(blockIdx==k)  = cellfun(@double,{Trials.velocity},'UniformOutput',false); %Raw from sensors
+            position(blockIdx==k)  = cellfun(@double,{Trials.position},'UniformOutput',false); %Derived from ViRMEn w/ collision detection, possible scaling, etc
             
             %X-position and view angle as matrices
             ySample = 1:lMaze(k);
@@ -144,7 +148,7 @@ for i = 1:numel(subjects)
         
         %Initialize
         [left, right, leftCue, rightCue,...
-            correct, omit, conflict, forward, stuck] = deal(false(1,numel(blockIdx)));
+            correct, omit, congruent, conflict, forward, stuck] = deal(false(1,numel(blockIdx)));
         
         for k = 1:numel(logs.block)
             %Cues, choices, and outcomes
@@ -156,8 +160,9 @@ for i = 1:numel(subjects)
             correct(blockIdx==k) = [Trials.choice]==[Trials.trialType];
             omit(blockIdx==k) = [Trials.choice]==Choice.nil;
             
-            %Trials where sensory and alternation rules conflict
-            conflict(blockIdx==k) = int8([Trials.trialType]) ~= int8(rightCue(blockIdx==k))+1; %R,L choice enumeration = 1,2           
+            %Trials where sensory and alternation rules agree or conflict
+            congruent(blockIdx==k) = int8([Trials.trialType]) == int8(rightCue(blockIdx==k))+1; %L,R choice enumeration = 1,2           
+            conflict(blockIdx==k) = ~congruent(blockIdx==k); %R,L choice enumeration = 1,2           
             %Trials where mouse turns greater than pi/2 rad L or R in cue or memory segment
             forward(blockIdx==k) = getStraightNarrowTrials({Trials.position},[0,lTrack(k)]);
             %Trials where mouse gets stuck after collision along cue segment
@@ -171,8 +176,9 @@ for i = 1:numel(subjects)
         trials(j) = struct(...
             'left',left,'right',right,'leftCue',leftCue,'rightCue',rightCue,...
             'correct',correct,'error',error,'omit',omit,...
+            'conflict',conflict,'congruent',congruent,...
             'forward',forward,'stuck',stuck,...
-            'exclude',exclude,'conflict',conflict,...
+            'exclude',exclude,...
             'blockIdx',blockIdx);
         
         %---Session data------------------------------------------------------------------

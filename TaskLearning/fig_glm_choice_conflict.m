@@ -1,9 +1,10 @@
-function figs = fig_longitudinal_glm( subjects, vars_cell )
+function figs = fig_glm_choice_conflict( subjects, vars_cell )
 
 % vars = struct('pCorrect',false,'pOmit',false,'mean_velocity',false);
 for i = 1:numel(vars_cell)
     vars{i} = vars_cell{i};
 end
+glmName = 'glm4'; %Assigned in analyzeTaskStrategy()
 
 setup_figprops('placeholder'); %Customize for performance plots
 figs = gobjects(0);
@@ -16,17 +17,14 @@ transparency = 0.2;
 %Colors
 colors = setPlotColors(brewColorSwatches);
 
-% Plot Performance as a function of Training Day
+% Plot GLM coefficient as a function of Training Day
 % one panel for each subject
 
-%Load performance data
-% for the future let's parse relevant data before saving as MAT
-prefix = 'GLM';
+prefix = 'GLM_Choice_Conflict';
 
 for i = 1:numel(subjects)
     
     sessions = subjects(i).sessions;
-    
     figs(i) = figure(...
         'Name',join([prefix, subjects(i).ID, string(vars)],'_'));
     tiledlayout(1,1);
@@ -41,15 +39,15 @@ for i = 1:numel(subjects)
             ylim, shadeOffset, colors.level(values(j),:), transparency);
     end
     
-    %Performance as a function of training day
+    %GLM coefficients as a function of training day
     X = 1:numel(sessions);
     for j = 1:numel(vars)
         %Extract data
-        if ismember(vars{j},{'cueSide','priorChoice','bias'})
-            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm1.(vars{j}).beta, 1:numel(sessions))';
-            se = arrayfun(@(sessionIdx) sessions(sessionIdx).glm1.(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
+        if ismember(vars{j},{'congruent','conflict','bias'})
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).(glmName).(vars{j}).beta, 1:numel(sessions))';
+            se = arrayfun(@(sessionIdx) sessions(sessionIdx).(glmName).(vars{j}).se, 1:numel(sessions),'UniformOutput',false);
         else
-            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).glm1.(vars{j}), 1:numel(sessions));
+            data{j} = arrayfun(@(sessionIdx) sessions(sessionIdx).(glmName).(vars{j}), 1:numel(sessions));
         end
        
         if numel(vars)>1 && any(ismember(vars,{'N','conditionNum'}))
@@ -66,7 +64,7 @@ for i = 1:numel(subjects)
             ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
         end
         
-        if ismember(vars{j},{'cueSide','priorChoice','bias'})
+        if ismember(vars{j},{'congruent','conflict','bias'})
             for k = 1:numel(sessions)
                 plot([X(k),X(k)],se{k},'color',colors.(vars{j}),'LineWidth',lineWidth);
             end
@@ -79,13 +77,13 @@ for i = 1:numel(subjects)
                     ylabel('Number of trials');
                 case 'conditionNum'
                     ylabel('Condition number for X''X');
-                case  {'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'}
+                case  {'R_predictors','R_conflict_choice', 'R_congruent_choice'}
                     plot([0,numel(X)+1],[0, 0],'k:','LineWidth',1);   %Zero line
                     ylabel('Correlation Coef.');
-                case {'pRightCue','pRightChoice'}
+                case {'pRightCue','pRightChoice','pConflict','pReward'}
                     plot([0,numel(X)+1],[0.5, 0.5],'k:','LineWidth',1);   %0.5 line
                     ylabel('Proportion of trials');
-                case {'cueSide','priorChoice','bias'}
+                case {'cueSide','priorChoice','congruent','conflict','bias'}
                     plot([0,numel(X)+1],[0, 0],'k:','LineWidth',1);   %Zero line
                     ylabel('Regression Coef.');
             end
@@ -106,11 +104,11 @@ for i = 1:numel(subjects)
     ax.PlotBoxAspectRatio = [3,2,1];
     xlim([0, max(X)+1]);
     if ismember(vars{j},...
-            {'pRightChoice','pRightCue'})
+            {'pRightCue','pRightChoice','pConflict','pReward'})
         ylim([0,1]);
-    elseif ismember(vars{j},{'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'})
+    elseif ismember(vars{j},{'R_predictors','R_conflict_choice', 'R_congruent_choice'})
         ylim([-1, 1]);
-    elseif ismember(vars{j},{'cueSide','priorChoice','bias'})
+    elseif ismember(vars{j},{'cueSide','priorChoice','congruent','conflict','bias'})
         ylim([-5, 5]);
     else
         rng = max(cellfun(@max,data))-min(cellfun(@min,data));
