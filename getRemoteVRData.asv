@@ -68,7 +68,7 @@ for i = 1:numel(subjects)
         
         %Initialize trial variables aggregated from logs
         blockIdx = nan(1,numel([logs.block.trial]));
-        [start_time, duration, response_time, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
+        [start_time, duration, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
         [position, velocity, collision_locations, stuck_locations] = deal(cell(numel(blockIdx),1));
         %Initialize as one cell per block
         [theta_trajectory, x_trajectory] = deal(cell(numel(logs.block),1)); %Matrices: nLocation x nTrial
@@ -89,7 +89,7 @@ for i = 1:numel(subjects)
             start_time(blockIdx==k) = [Trials.start];
             
             %Time from trial start to choice & Duration including ITI
-            response_time(blockIdx==k)  = arrayfun(@(idx) Trials(idx).time(Trials(idx).iterations), 1:numel(Trials));
+            response_time(blockIdx==k,:)  = arrayfun(@(idx) Trials(idx).time(Trials(idx).iterations), 1:numel(Trials));
             duration(blockIdx==k)  = [Trials.duration];
             
             %Running velocity and position

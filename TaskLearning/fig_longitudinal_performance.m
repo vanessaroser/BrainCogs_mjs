@@ -15,6 +15,8 @@ transparency = 0.2;
 
 %Colors
 colors = setPlotColors(brewColorSwatches);
+colors.trialTypes.correct = colors.congruent; 
+colors.trialTypes.priorCorrect = colors.congruent;
 
 % Plot Performance as a function of Training Day
 % one panel for each subject

@@ -3,10 +3,11 @@ function figs = fig_longitudinal_trialDuration( subjects )
 setup_figprops('placeholder'); %Customize for performance plots
 figs = gobjects(0);
 
-conditions = ["outcome","priorOutcome","conflict"];
+conditions = ["outcome","priorOutcome","conflict","ITI"];
 
 %Plotting params
 lineWidth = 1;
+boxWidth = 0.3;
 shadeOffset = 0.2;
 transparency = 0.2;
 
@@ -19,10 +20,51 @@ for i = 1:numel(subjects)
     
     trials = subjects(i).trials;
     trialData = subjects(i).trialData;
+    trialTypes = ["correct","error","congruent","conflict"];
+    for j = 1:numel(trialTypes)
+        idx.(trialTypes(j)) = cellfun(@(trialIdx,fwdIdx)...
+            trialIdx & fwdIdx,...
+        {trials.(trialTypes(j))},{trials.forward},'UniformOutput',false);
+    end
+    idx.priorCorrect = cellfun(@(trialIdx,fwdIdx,correctIdx)...
+        [false, trialIdx(1:end-1)] & fwdIdx & correctIdx,...
+        {trials.correct},{trials.forward},idx.correct,'UniformOutput',false);
+    idx.priorError = cellfun(@(trialIdx,fwdIdx,correctIdx)...
+        [false, trialIdx(1:end-1)] & fwdIdx & correctIdx,...
+        {trials.error},{trials.forward},idx.correct,'UniformOutput',false);
+    
     for j = 1:numel(conditions)
+        %Extract data
+        switch conditions(j)
+            case "outcome"
+                labels = ["correct","error"];
+                data{1} = cellfun(@(dur,trialIdx) dur(trialIdx),...
+                    {trialData.response_time},idx.correct,'UniformOutput',false);
+                data{2} = cellfun(@(dur,trialIdx) dur(trialIdx),...
+                    {trialData.response_time},idx.error,'UniformOutput',false);
+            case "priorOutcome" %**Include only correct trials??
+                labels = ["priorCorrect","priorError"];
+                data{1} = cellfun(@(dur,trialIdx) dur(trialIdx),...
+                    {trialData.response_time},idx.priorCorrect,'UniformOutput',false);
+                data{2} = cellfun(@(dur,trialIdx) dur(trialIdx),...
+                    {trialData.response_time},idx.priorError,'UniformOutput',false);
+            case "conflict"
+                labels = ["congruent","conflict"];
+                data{1} = cellfun(@(dur,trialIdx) dur(trialIdx),...
+                    {trialData.response_time},idx.congruent,'UniformOutput',false);
+                data{2} = cellfun(@(dur,trialIdx) dur(trialIdx),...
+                    {trialData.response_time},idx.conflict,'UniformOutput',false);
+            case "ITI"
+                labels = ["correct","error"];
+                data{1} = cellfun(@(dur,respTime,trialIdx) dur(trialIdx)-respTime(trialIdx),...
+                    {trialData.duration},{trialData.response_time},idx.correct,'UniformOutput',false);
+                data{2} = cellfun(@(dur,respTime,trialIdx) dur(trialIdx)-respTime(trialIdx),...
+                    {trialData.duration},{trialData.response_time},idx.error,'UniformOutput',false);
+        end
+    
     
     figs(figIdx) = figure(...
-        'Name',join([prefix, subjects(i).ID, string(conditions)],'_'));
+        'Name',join([prefix, subjects(i).ID, string(conditions(j))],'_'));
     tiledlayout(1,1);
     ax = nexttile();
     hold on;
@@ -36,50 +78,22 @@ for i = 1:numel(subjects)
     end
     
     %Performance as a function of training day
-    X = 1:numel(sessions);
-
-        %Extract data
-        switch conditions(j)
-            case "outcome"
-                correctIdx = cellfun(@(trialIdx,fwdIdx) trialIdx & fwdIdx,...
-                    {trials.correct},{trials.forward},'UniformOutput',false);
-                errorIdx = cellfun(@(trialIdx,fwdIdx) trialIdx & fwdIdx,...
-                    {trials.error},{trials.forward},'UniformOutput',false);
-                data.correct = cellfun(@(dur,trialIdx) dur(trialIdx),...
-                    {trialData.duration},correctIdx,'UniformOutput',false);
-                data.error = cellfun(@(dur,trialIdx) dur(trialIdx),...
-                    {trialData.duration},errorIdx,'UniformOutput',false);
-            case "priorOutcome"
-                priorCorrectIdx = cellfun(@(trialIdx,fwdIdx) [false, trialIdx(1:end-1)] & fwdIdx,...
-                    {trials.correct},{trials.forward},'UniformOutput',false);
-                priorErrorIdx = cellfun(@(trialIdx,fwdIdx) [false, trialIdx(1:end-1)] & fwdIdx,...
-                    {trials.error},{trials.forward},'UniformOutput',false);
-                data.priorCorrect = cellfun(@(dur,trialIdx) dur(trialIdx),...
-                    {trialData.duration},priorCorrectIdx,'UniformOutput',false);
-                data.priorError = cellfun(@(dur,trialIdx) dur(trialIdx),...
-                    {trialData.duration},priorErrorIdx,'UniformOutput',false);
-            case "conflict"
-                congruentIdx = cellfun(@(trialIdx,fwdIdx) trialIdx & fwdIdx,...
-                    {trials.congruent},{trials.forward},'UniformOutput',false);
-                conflictIdx = cellfun(@(trialIdx,fwdIdx) trialIdx & fwdIdx,...
-                    {trials.conflict},{trials.forward},'UniformOutput',false);
-                data.congruent = cellfun(@(dur,trialIdx) dur(trialIdx),...
-                    {trialData.duration},congruentIdx,'UniformOutput',false);
-                data.conflict = cellfun(@(dur,trialIdx) dur(trialIdx),...
-                    {trialData.duration},conflictIdx,'UniformOutput',false);
+    X = 1:numel(trialData);
+    for k = 1:numel(data) %eg correct vs. error
+        for kk = X
+            p(k) = plot_basicBox( X(kk), data{k}{kk}, boxWidth, lineWidth, colors.trialTypes.(labels{k}), transparency );
         end
-            %Axes scale
-            xlim([0, max(X)+1]);
-            rng = max(cellfun(@max,data))-min(cellfun(@min,data));
-
-    
-       h = plot_basicBox( X, data, boxWidth, lineWidth, color, transparency );
+    end
         
     %Axes scale
     ax.PlotBoxAspectRatio = [3,2,1];
+    %Axes scale
+    rng = [min(cellfun(@(C) prctile(C,9),[data{:}])), max(cellfun(@(C) prctile(C,91),[data{:}]))];
     xlim([0, max(X)+1]);
-    ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);
-    legend(p,conditions,'Location','best','Interpreter','none');
+    %     ylim(rng + 0.1*rng.*[-1,1]);
+    ylim([0 15]);
+    y
+    legend(p,labels,'Location','best','Interpreter','none');
     
     %Labels and titles
     xlabel('Session number');
@@ -87,17 +101,14 @@ for i = 1:numel(subjects)
     title(subjects(i).ID,'interpreter','none');
     
     %Adjust height of shading as necessary
-    if numel(ax.YAxis)==2
-        ax.YAxis(1).Limits = [0, max(ax.YAxis(1).Limits)]; %Set min to zero
-        ax.YAxis(2).Limits = [0, max(ax.YAxis(2).Limits)];
-    end
-    maxY = max([ax.YAxis(1).Limits]);
-    minY = min([ax.YAxis(1).Limits]);
-    newVert = [maxY,maxY,minY,minY];
+    maxY = max(ylim);
+    minY = min(ylim);
+    newVert = [max(ylim), max(ylim), min(ylim), min(ylim)];
     for j = 1:numel(shading)
         shading(j).Vertices(:,2) = newVert;
     end
     clearvars shading
+    figIdx = figIdx+1;
     end
 end
 end %End main fcn
