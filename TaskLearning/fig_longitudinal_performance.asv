@@ -14,10 +14,10 @@ shadeOffset = 0.2;
 transparency = 0.2;
 
 %Colors
-cbrew = brewColorSwatches;
-colors = setPlotColors(cbrew);
-colors.mean_stuckTime = cbrew.orange;
-colors.mean_velocity = cbrew.green;
+colors = setPlotColors(brewColorSwatches);
+
+colors.trialTypes.correct = colors.congruent; 
+colors.trialTypes.priorCorrect = colors.congruent;
 
 % Plot Performance as a function of Training Day
 % one panel for each subject

@@ -49,7 +49,11 @@ end
             if ~iscell(data)
                 data = {data};
             end
-            data = cellfun(@angleMPiPi,data,'UniformOutput',false);
+            
+            %Convert from cumulative to relative view angle 
+            if vars(i)=="theta_trajectory"
+                data = cellfun(@angleMPiPi,data,'UniformOutput',false);
+            end
             
             %Convert trial indices to cell
             if ~iscell(trialIdx)
