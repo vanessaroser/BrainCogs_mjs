@@ -21,14 +21,14 @@ dataSource = struct('remoteLogData',true,'experimentData',false,...
 exe = struct(...
     'reloadData',           true,...
     'updateExperData',      true,...
-    'motor_trajectory',     true,...
-    'model_strategy',       true,...
+    'motor_trajectory',     false,...
+    'model_strategy',       false,...
     'dailyIntakeTable',     false,...
     'writeIntake2DB',       false);
 plots = struct(...
     'motor_trajectory',                 false,...
     'collision_locations',              false,...
-    'trial_duration',                   true,...
+    'trial_duration',                   false,...
     'longitudinal_performance',         true,...
     'longitudinal_glm_choice_outcome',  true,...
     'glm_cueSide_priorChoice',          false,... %Probably not needed after including glm_choice_outcome
@@ -47,7 +47,7 @@ if exe.reloadData
         'startDate', datetime('2021-06-15'),... 
         'experimenter', 'mjs20',... 
         'waterType', 'Milk');
-%     subjects = getCNOTests(subjects, experiment); %Append CNO/DREADD details
+    subjects = getCNOTests(subjects, experiment); %Append CNO/DREADD details
 end
 
 %Switch data source
@@ -102,6 +102,10 @@ if exe.model_strategy
     subjects = analyzeTaskStrategy(subjects);
 end
 
+%Get Colors for Plotting
+cbrew = brewColorSwatches;
+colors = setPlotColors(cbrew,experiment);
+
 %Plot View-Angle and X-Trajectory for each session
 if plots.motor_trajectory
     saveDir = fullfile(dirs.results,'Motor Trajectories');
@@ -134,14 +138,9 @@ end
 if plots.longitudinal_performance
     %Full performance data for each subject
     saveDir = fullfile(dirs.results,'Performance');
-%     vars = {...
-%         {'pCorrect','pOmit'},...'pCorrect', cbrew.black, 'pOmit'
-%         {'pCorrect','mean_stuckTime'},...
-%         {'pCorrect','pCorrect_conflict'},...
-%         };
-vars = {["pCorrect","pCorrect_conflict"],"mean_stuckTime","mean_velocity"};
+    vars = {["pCorrect_congruent","pCorrect_conflict"],"mean_pSkid","mean_velocity"};
     for i = 1:numel(vars)
-        figs = fig_longitudinal_performance(subjects,vars{i});
+        figs = fig_longitudinal_performance(subjects,vars{i},colors);
         save_multiplePlots(figs,saveDir);
         clearvars figs;
     end
@@ -209,4 +208,15 @@ if plots.group_performance
     save_multiplePlots(figs,saveDir);
     clearvars figs;
 end
+
+if plots.cno_sessions
+    %Group performance following introduction of memory region
+    vars = ["pCorrect","pOmit","nCompleted","mean_velocity"];
+    for i = 1:numel(vars)
+        nPreTestSessions = 5;
+        figs(i,:) = fig_cnoSessions_alternation(subjects, vars(i), nPreTestSessions);
+    end
+    save_multiplePlots(figs,dirs.results); 
+end
+
 

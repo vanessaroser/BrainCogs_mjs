@@ -2,6 +2,11 @@ function subjects = analyzeTaskStrategy(subjects)
 
 for i = 1:numel(subjects)
     for j = 1:numel(subjects(i).sessions)
+        
+        %Skip forced choice (L-Maze) sessions 
+        if subjects(i).sessions(j).sessionType=="Forced"
+            continue
+        end
                
         %Trial masks for predictors and response variable
         trials = subjects(i).trials(j);
@@ -9,12 +14,15 @@ for i = 1:numel(subjects)
         rightChoice = trials.right(~trials.omit)'; 
         reward = trials.correct(~trials.omit)'; %Trial outcome
         conflict = trials.conflict(~trials.omit)';
-    
-        %Additional session summary for conflict trials ***Add to getRemoteVRData.m
+            
+        %Additional session summary separated by conflict/congruent trials ***Add to getRemoteVRData.m
         pCorrect_conflict = mean(reward(conflict));
         pConflict = mean(conflict);
         subjects(i).sessions(j).pConflict = pConflict;
         subjects(i).sessions(j).pCorrect_conflict = pCorrect_conflict;
+        
+        congruent = trials.congruent(~trials.omit)'; 
+        pCorrect_congruent = mean(reward(congruent));
         
         %% GLM 1: Logistic regression of Choices based on Sensory Cues and Prior Choice
         
@@ -23,12 +31,6 @@ for i = 1:numel(subjects)
         effectCode = @(X) 2*(X-0.5);
         predictors = effectCode([rightCue, rightPriorChoice]);
         response = rightChoice;
-        
-%         %Catch sessions with no trials
-%         nPredictors = 2;
-%         if isempty(predictors) || isempty(response)
-%             predictors = nan(1,nPredictors);
-%         end
         
         %Run regression
         [stats, predictors, response, condNum, warnMsg, warnId] = logistic(predictors, response);

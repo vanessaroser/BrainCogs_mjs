@@ -6,6 +6,12 @@ clims = [-0.3,0.3];
 for i = 1:numel(subjects)
     %Populate matrix with autocorrelations from each session
     S = subjects(i).sessions;
+    if isfield(S,'glm3')
+        S = S(cellfun(@(GLM) ~isempty(GLM), {S.glm3}));
+    else, continue
+    end
+    
+    
     CData = cell2mat(arrayfun(...
         @(sessionIdx) S(sessionIdx).glm3.xcorrChoice, 1:numel(S),...
         'UniformOutput',false))';

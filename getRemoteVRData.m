@@ -41,7 +41,8 @@ for i = 1:numel(subjects)
     sessions(numel(data_files),1) = struct(...
         'session_date', [], 'level', [], 'reward_scale', [],'maxSkidAngle', [],...
         'nTrials', [], 'nCompleted', [], 'nForward', [],...
-        'pCorrect', [], 'pOmit', [], 'pStuck', [],...
+        'pCorrect', [], 'pCorrect_congruent',[], 'pCorrect_conflict',[],...
+        'pOmit', [], 'pStuck', [],...
         'mean_velocity', [], 'mean_pSkid',[],'mean_stuckTime',[],'median_stuckTime',[],...
         'remote_path_behavior_file', []);
     
@@ -65,6 +66,10 @@ for i = 1:numel(subjects)
         
         %Check for empty blocks or trials and remove (discuss with Alvaro!)
         logs = removeEmpty(logs,data_files(j).remote_path_behavior_file);
+        logs = excludeBadBlocks(logs, experiment); %Edit function to exclude specific blocks
+        if isempty(logs)
+            continue 
+        end
         
         %Initialize trial variables aggregated from logs
         blockIdx = nan(1,numel([logs.block.trial]));
@@ -202,6 +207,8 @@ for i = 1:numel(subjects)
             'nCompleted', sum(~omit),...
             'nForward', sum(forward),...
             'pCorrect', mean(correct(~omit)),...
+            'pCorrect_congruent', mean(correct(~omit & congruent)),...
+            'pCorrect_conflict', mean(correct(~omit & conflict)),...
             'pOmit', mean(omit),...
             'pStuck', mean(stuck(~omit)),...
             'mean_velocity', mean(trialData(j).mean_velocity(forward & ~omit,2)),... %Mean velocity across all completed trials (x,y,theta)
@@ -216,8 +223,16 @@ for i = 1:numel(subjects)
     subjects(i).trialData   = trialData;
     subjects(i).sessions    = sessions;
     
+    %Remove excluded sessions
+    fields = ["logs","trials","trialData","sessions"];
+    exclSessionIdx = cellfun(@isempty,{subjects(i).sessions.session_date});
+    for j=1:numel(fields)
+        subjects(i).(fields(j)) = subjects(i).(fields(j))(~exclSessionIdx);
+    end
+    
     clearvars trials trialData sessions;
 end
+
 
 
 function log = removeEmpty(log, file_path)

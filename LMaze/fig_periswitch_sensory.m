@@ -1,4 +1,4 @@
-function fig = fig_periswitch_alternation( subjects, var )
+function fig = fig_periswitch_sensory( subjects, var )
 
 setup_figprops('placeholder'); %Customize for performance plots
 
@@ -25,13 +25,12 @@ prefix = 'Group_';
 nSensory = 10;
 nEarly = 10;
 nLate = 10;
-% subjects = subjects(1:6); %Exclude M17...too few alternation sessions
 for i = 1:numel(subjects)
     % Group according to different phases of training
-    sensoryIdx = ... % Sensory-guided sessions
+    forcedIdx = ... % Forced-choice sessions
         cellfun(@max,{subjects(i).sessions.level}) < 7;
-    altIdx = ... % Early alternation sessions
-        cellfun(@min,{subjects(i).sessions.level}) == 7;
+    sensoryIdx = ~forcedIdx &... % Sensory-guided sessions
+        cellfun(@max,{subjects(i).sessions.level}) < 9;
     sensorySessions{i} = find(sensoryIdx,nSensory,'last');
     altSessions{i} = find(altIdx);
     earlySessions{i} = find(altIdx,nEarly,'first'); 
