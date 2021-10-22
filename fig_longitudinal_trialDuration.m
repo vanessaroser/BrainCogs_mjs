@@ -1,4 +1,4 @@
-function figs = fig_longitudinal_trialDuration( subjects )
+function figs = fig_longitudinal_trialDuration( subjects, experiment )
 
 setup_figprops('placeholder'); %Customize for performance plots
 figs = gobjects(0);
@@ -12,7 +12,7 @@ shadeOffset = 0.2;
 transparency = 0.2;
 
 %Colors
-colors = setPlotColors(brewColorSwatches);
+colors = setPlotColors(brewColorSwatches,experiment);
 prefix = 'longitudinal_GLM';
 
 figIdx = 1;

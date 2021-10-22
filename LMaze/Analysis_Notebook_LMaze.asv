@@ -124,7 +124,7 @@ if plots.collision_locations
     clearvars figs;
 end
 
-if plots.trial_duration %Need to subtract ITI (longer after errors - inherited from poisson_blocks.mat)
+if plots.trial_duration
     saveDir = fullfile(dirs.results,'Trial Duration');
     figs = fig_longitudinal_trialDuration( subjects,experiment );
     save_multiplePlots(figs,saveDir);

@@ -22,6 +22,9 @@ figIdx = 1;
 for i = 1:numel(subjects)
     for j = 1:numel(subjects(i).sessions)
         S = subjects(i).sessions(j);
+
+        if isempty(S.(glmName)), continue, end
+
         figs(figIdx) = figure(...
             'Name',join([glmName, subjects(i).ID, datestr(S.session_date,'yymmdd')],'_'));
         tiledlayout(1,1);

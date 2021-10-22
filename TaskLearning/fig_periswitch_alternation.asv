@@ -1,4 +1,4 @@
-function fig = fig_periswitch_alternation( subjects, var )
+function fig = fig_periswitch_alternation( subjects, var, params )
 
 setup_figprops('placeholder'); %Customize for performance plots
 
@@ -22,25 +22,25 @@ colors.mean_velocity = cbrew.green;
 prefix = 'Group_';
 
 %Aggregate data
-nSensory = 10;
-nEarly = 10;
-nLate = 10;
+nSensory = params.nSensory;
 % subjects = subjects(1:6); %Exclude M17...too few alternation sessions
 for i = 1:numel(subjects)
     % Group according to different phases of training
-    sensoryIdx = ... % Sensory-guided sessions
-        cellfun(@max,{subjects(i).sessions.level}) < 7;
-    altIdx = ... % Early alternation sessions
-        cellfun(@min,{subjects(i).sessions.level}) == 7;
+    sensoryIdx = [subjects(i).sessions.sessionType]=="Sensory"; % Sensory-guided sessions
+    altIdx = [subjects(i).sessions.sessionType]=="Alternation"; % Alternation sessions
     sensorySessions{i} = find(sensoryIdx,nSensory,'last');
     altSessions{i} = find(altIdx);
-    earlySessions{i} = find(altIdx,nEarly,'first'); 
-    lateSessions{i} = find(altIdx,nLate,'last');
 end
-maxSessions = mode(cellfun(@numel,altSessions));
+
+%How to treat data from most experienced mice
+nAlternation = min(cellfun(@numel,altSessions)); %Use min number of sessions across mice
+if isnumeric(params.nAlternation)
+    nAlternation = params.nAlternation;
+elseif params.nAlternation=='useMax'
+    nAlternation = max(cellfun(@numel,altSessions)); %Use max number of sessions across mice
+end
 
 %Aggregate into matrix
-
 Title = 'Sensory to Alternation';
 shading = cbrew.blue;
     
@@ -49,17 +49,18 @@ shading = cbrew.blue;
     ax = axes();
     hold on;
 
-    data = getData(subjects,var,sensorySessions,altSessions,nSensory,maxSessions);
+    data = getData(subjects,var,sensorySessions,altSessions,nSensory,nAlternation);
     X = -(size(data{1},2)) : size(data{2},2)-1;
-    shadeDomain(X(X>=0),... %Shade sessions after switch
-        [0,1], shadeOffset, shading, transparency);
+%     shadeDomain(X(X>=0),... %Shade sessions after switch
+%         [0,1], shadeOffset, shading, transparency);
+plot([0,0],[0,1],'LineStyle',':','LineWidth',lineWidth,'Color',cbrew.gray);
     
     if var=="pCorrect_conflict"
         plot(X, mean([data{:}],'omitnan'),'o','MarkerSize',markerSize(2),...
             'LineStyle','none','LineWidth',lineWidth,'Color',colors.(var));
         plotSEM(X, [data{:}],colors.(var),lineWidth);
         var = "pCorrect_congruent";
-        data = getData(subjects,var,sensorySessions,altSessions,nSensory,maxSessions); %Co-plot with pCorrect_congruent
+        data = getData(subjects,var,sensorySessions,altSessions,nSensory,nAlternation); %Co-plot with pCorrect_congruent
         plot(X, mean([data{:}],'omitnan'),'o','MarkerSize',markerSize(2),...
             'LineStyle','none','LineWidth',lineWidth,'Color',colors.(var));
         plotSEM(X, [data{:}],colors.(var),lineWidth);
@@ -69,7 +70,7 @@ shading = cbrew.blue;
         plot(X(X>=0), mean([data{2}],'omitnan'),'Color',colors.(var));
     end
         switch var
-            case {'pCorrect', 'pCorrect_conflict'}
+            case {'pCorrect','pCorrect_congruent','pCorrect_conflict'}
                 ylabel('Accuracy');
                 ylim([0, 1]);
             case 'pOmit'
@@ -87,7 +88,7 @@ shading = cbrew.blue;
     
     %Labels and titles
     xlabel('Sessions from introduction');
-    title(Title,'interpreter','none');
+%     title(Title,'interpreter','none');
 end
 %End main fcn
 
@@ -95,7 +96,8 @@ end
         data = {NaN(numel(subjects),nSensory), NaN(numel(subjects),maxSessions)};
         for i = 1:numel(subjects)
             values = [subjects(i).sessions.(var)];
-            data{1}(i,:) = values(sensorySessions{i});
+            nSessions = numel(sensorySessions{i});
+            data{1}(i,end-nSessions+1:end) = values(sensorySessions{i});
             data{2}(i,1:min(numel(altSessions{i}),maxSessions)) =...
                 values(altSessions{i}(1:min(numel(altSessions{i}),maxSessions)));
         end
