@@ -126,7 +126,7 @@ for i = 1:numel(subjects)
         end
         
         %Concatenate as matrix if only one maze
-        if numel(unique(cellfun(@(T) size(T,1),x_trajectory)))==1 &&... 
+        if numel(unique(cellfun(@(T) size(T,1),x_trajectory))) &&... 
                 (numel([logs.block.mazeID])==1 || isequal(logs.block.mazeID))
             x_trajectory = [x_trajectory{:}];
             theta_trajectory = [theta_trajectory{:}];
