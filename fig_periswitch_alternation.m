@@ -9,14 +9,7 @@ shadeOffset = 0.5;
 transparency = 0.3;
 
 %Colors
-cbrew = brewColorSwatches;
-colors.pCorrect = cbrew.black; %Contrast for pCorrect
-colors.pCorrect_congruent = cbrew.black; %Contrast for pCorrect
-colors.pCorrect_conflict = cbrew.red; %Contrast for pCorrect
-colors.pOmit = cbrew.orange;
-colors.nCompleted = cbrew.blue;
-colors.mean_velocity = cbrew.green; 
-
+colors = params.colors;
 
 %Prefix for save
 prefix = 'Group_';
@@ -42,6 +35,7 @@ end
 
 %Aggregate into matrix
 Title = 'Sensory to Alternation';
+cbrew = brewColorSwatches;
 shading = cbrew.blue;
     
     fig = figure('Name',join([prefix,'_', var],''));
@@ -64,6 +58,16 @@ plot([0,0],[0,1],'LineStyle',':','LineWidth',lineWidth,'Color',cbrew.gray);
         plot(X, mean([data{:}],'omitnan'),'o','MarkerSize',markerSize(2),...
             'LineStyle','none','LineWidth',lineWidth,'Color',colors.(var));
         plotSEM(X, [data{:}],colors.(var),lineWidth);
+    elseif var=="maxCorrectMoving_conflict"
+        plot(X, mean([data{:}],'omitnan'),'o','MarkerSize',markerSize(2),...
+            'LineStyle','none','LineWidth',lineWidth,'Color',colors.(var));
+        plotSEM(X, [data{:}],colors.(var),lineWidth);
+        var = "maxCorrectMoving_congruent";
+        data = getData(subjects,var,sensorySessions,altSessions,nSensory,nAlternation); %Co-plot with pCorrect_congruent
+        plot(X, mean([data{:}],'omitnan'),'o','MarkerSize',markerSize(2),...
+            'LineStyle','none','LineWidth',lineWidth,'Color',colors.(var));
+        plotSEM(X, [data{:}],colors.(var),lineWidth);
+    
     else
         plot(X, [data{:}],'.','MarkerSize',markerSize(1),'LineStyle','none');
         plot(X(X<0), mean([data{1}],'omitnan'),'Color',colors.(var));
@@ -72,6 +76,9 @@ plot([0,0],[0,1],'LineStyle',':','LineWidth',lineWidth,'Color',cbrew.gray);
         switch var
             case {'pCorrect','pCorrect_congruent','pCorrect_conflict'}
                 ylabel('Accuracy');
+                ylim([0, 1]);
+            case {'maxCorrectMoving_congruent','maxCorrectMoving_conflict'}
+                ylabel('Max. Accuracy');
                 ylim([0, 1]);
             case 'pOmit'
                 ylabel('Proportion of trials');

@@ -1,6 +1,5 @@
 function figs = fig_longitudinal_performance( subjects, vars_cell, colors )
 
-% vars = struct('pCorrect',false,'pOmit',false,'mean_velocity',false);
 for i = 1:numel(vars_cell)
     vars{i} = vars_cell{i};
 end
@@ -13,18 +12,10 @@ lineWidth = 1;
 shadeOffset = 0.5;
 transparency = 0.1;
 
-%Colors
-cbrew = brewColorSwatches;
-colors.mean_stuckTime = cbrew.orange;
-colors.mean_pSkid = cbrew.orange;
-colors.mean_velocity = cbrew.green;
-colors.pOmit = cbrew.black;
-
 % Plot Performance as a function of Training Day
 % one panel for each subject
 
 %Load performance data
-% for the future let's parse relevant data before saving as MAT
 prefix = 'Performance';
 
 for i = 1:numel(subjects)
@@ -53,17 +44,24 @@ for i = 1:numel(subjects)
     end
     
     %Line at 0.5 for proportional quantities
+    allProportional = all(ismember(vars,{'pCorrect','pCorrect_congruent','pCorrect_conflict','pOmit',...
+            'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict'}));
     X = 1:numel(subjects(i).sessions);
-    if all(ismember(vars,{'pCorrect','pCorrect_congruent','pCorrect_conflict','pOmit'}))
+    if allProportional
         plot([0,X(end)+1],[0.5, 0.5],...
             ':k','LineWidth',1);
+        %Overall mean for congruent & conflict plots
+        if isequal(vars,{'maxCorrectMoving_congruent','maxCorrectMoving_conflict'})
+            p(3) = plot(X, [subjects(i).sessions.maxCorrectMoving],...
+                'Color',[0.8,0.8,0.8],'LineWidth',3);
+        end
     end
+
     
     yyax = {'left','right'};
     for j = 1:numel(vars)
         %Dual Y-axes or 0.5 line for proportional quantities
-        if numel(vars)>1 && any(~ismember(vars,...
-                {'pCorrect','pCorrect_conflict','pOmit'}))
+        if numel(vars)>1 && ~allProportional
             yyaxis(ax,yyax{j});
             ax.YAxis(j).Color = colors.(vars{j});
         end
@@ -81,20 +79,29 @@ for i = 1:numel(subjects)
                 'LineWidth',lineWidth);
             if j==numel(vars)
                 if isequal(vars,{'pCorrect','pCorrect_conflict'})
-                    if  ~all(isnan([subjects(i).sessions.pCorrect_conflict]))
                         legend(p,{'All','Conflict'},'Location','northwest','Interpreter','none');
-                    end
+                elseif isequal(vars,{'pCorrect_congruent','pCorrect_conflict'})
+                        legend(p,{'Congruent','Conflict'},'Location','northwest','Interpreter','none');
+                elseif isequal(vars,{'maxCorrectMoving_congruent','maxCorrectMoving_conflict'})
+                    legend(p,{'Congruent','Conflict','All'},'Location','northwest','Interpreter','none');
                 else
                     legendVars = cellfun(@(C) ~all(isnan([subjects(i).sessions.(C)])), vars);
                     legend(p,vars{legendVars},'Location','northwest','Interpreter','none');
                 end
             end
         end
-        
+
+        zoom2TMaze = false; %Cutoff L-maze data
         switch vars{j}
-            case {'pCorrect','pCorrect_conflict'}
+            case {'pCorrect','pCorrect_conflict','pCorrect_congruent'}
+                %Only applies to Sensory and Alternation Sessions
                 p(j).YData(sessionType=="Forced") = NaN;
                 ylabel('Accuracy');
+                ylim([0, 1]);
+            case {'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict'}
+                %Only applies to Sensory and Alternation Sessions
+                p(j).YData(sessionType=="Forced") = NaN;
+                ylabel('Max. Accuracy');
                 ylim([0, 1]);
             case {'pOmit','pConflict','pStuck'}
                 ylabel('Proportion of trials');
@@ -111,11 +118,21 @@ for i = 1:numel(subjects)
                 ylabel('Number of completed trials');
         end
     end
-    
-    
+
+    %Cutoff L-maze data
+    if all(ismember(vars,{'pCorrect','pCorrect_conflict','pCorrect_congruent',...
+            'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict'}))
+        zoom2TMaze = true; 
+        sessionType(sessionType=="Forced") = "";
+    end
+
     %Axes scale
     ax.PlotBoxAspectRatio = [3,2,1];
     xlim([0, max(X)+1]);
+    if zoom2TMaze
+    xlim([find(sessionType=="Sensory",1,'first')-shadeOffset, max(xlim)]);
+    zoom2TMaze = false;
+    end
     
     %Labels and titles
     xlabel('Session number');
@@ -124,15 +141,17 @@ for i = 1:numel(subjects)
     
     %Add labels for maze-type/rule
     typeLabels = unique(sessionType,'stable');
-    txtX = arrayfun(@(idx) find(sessionType==typeLabels(idx),1,'last'), 1:numel(typeLabels));
+    txtX = arrayfun(@(idx) find(sessionType==typeLabels(idx),1,'first'), 1:numel(typeLabels));
     txtY = min(ylim)+[1,2,1].*...
         0.1*(max(ylim)-min(ylim));
 %     yyaxis left;
     for j=1:numel(typeLabels)
         txt(j) = text(txtX(j),txtY(j),typeLabels(j),...
             'Color',colors.level(levels(txtX(j)),:),...
-            'HorizontalAlignment','right');
+            'HorizontalAlignment','left');
     end
+    txt(end).HorizontalAlignment='right';
+    txt(end).Position(1) = find(sessionType==typeLabels(end),1,'last');
     
     %Adjust height of shading as necessary
     newVert = [max([ax.YAxis.Limits]),max([ax.YAxis.Limits]),min([ax.YAxis.Limits]),min([ax.YAxis.Limits])]; %Might need ax.YAxis(i).Limits...

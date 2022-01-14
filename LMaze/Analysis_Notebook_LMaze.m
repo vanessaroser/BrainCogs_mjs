@@ -1,4 +1,3 @@
-
 %Set paths
 close all;
 experiment = 'mjs_taskLearningWalls'; %If empty, fetch data from all experiments
@@ -26,9 +25,9 @@ exe = struct(...
     'dailyIntakeTable',     false,...
     'writeIntake2DB',       false);
 plots = struct(...
-    'motor_trajectory',                 false,...
-    'collision_locations',              false,...
-    'trial_duration',                   false,...
+    'motor_trajectory',                 true,...
+    'collision_locations',              true,...
+    'trial_duration',                   true,...
     'longitudinal_performance',         true,...
     'longitudinal_glm_choice_outcome',  true,...
     'glm_cueSide_priorChoice',          false,... %Probably not needed after including glm_choice_outcome
@@ -136,7 +135,9 @@ end
 if plots.longitudinal_performance
     %Full performance data for each subject
     saveDir = fullfile(dirs.results,'Performance');
-    vars = {{'pCorrect','pOmit'},{'mean_velocity','pOmit'}};
+    vars = {{'pCorrect_congruent','pCorrect_conflict'},...
+        {'maxCorrectMoving_congruent','maxCorrectMoving_conflict'},...
+        {'mean_velocity','pOmit'},{'pStuck','mean_pSkid'}};
     for i = 1:numel(vars)
         figs = fig_longitudinal_performance(subjects,vars{i},colors);
         save_multiplePlots(figs,saveDir);
@@ -185,12 +186,21 @@ if plots.group_performance
     figs = fig_periswitch_sensory(subjects, 'pCorrect');
     save_multiplePlots(figs,saveDir);
     clearvars figs;
-    vars = ["pCorrect","pCorrect_conflict"];
-    params = struct('nSensory',4,'nAlternation','min');
+    vars = ["pCorrect","pCorrect_conflict","maxCorrectMoving_conflict"];
+    params = struct('nSensory',4,'nAlternation','min','colors',colors);
     for i = 1:numel(vars)
-    figs = fig_periswitch_alternation(subjects,vars(i),params);
+    figs(i) = fig_periswitch_alternation(subjects,vars(i),params);
     end
     save_multiplePlots(figs,saveDir);
     clearvars figs;
 end
 
+% ------------- NOTES ------
+%211020 Dropped pressure to slow ball rotation
+%211029 Introduced back dampers to slow ball rotation
+%211111 Introduced side dampers
+%211108 Introduced Air Puffs for Negative Outcome
+%211119 Reduced Cue Density from 5/cm to 3/cm
+%211123 Shortened main stem length from 200 to 150 cm
+%211126 Shortened main stem length to 100 cm for mjs09 and mjs10, later mjs18 and mjs19
+%211213 Shortened main stem length to 100 cm for mjs20

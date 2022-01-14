@@ -1,4 +1,4 @@
-function figs = fig_longitudinal_glm( subjects, vars_cell )
+function figs = fig_longitudinal_glm( subjects, vars_cell, colors )
 
 % vars = struct('pCorrect',false,'pOmit',false,'mean_velocity',false);
 for i = 1:numel(vars_cell)
@@ -11,10 +11,7 @@ figs = gobjects(0);
 %Plotting params
 lineWidth = 1;
 shadeOffset = 0.2;
-transparency = 0.2;
-
-%Colors
-colors = setPlotColors(brewColorSwatches);
+transparency = 0;
 
 % Plot Performance as a function of Training Day
 % one panel for each subject
@@ -40,6 +37,10 @@ for i = 1:numel(subjects)
         shading(j) = shadeDomain(find(pastLevels),...
             ylim, shadeOffset, colors.level(values(j),:), transparency);
     end
+
+    %Dotted line at rule shift
+    X = find([sessions.sessionType]=="Alternation",1,'first');
+    plot([X,X],[-10,10],'r','LineWidth',lineWidth);
     
     %Performance as a function of training day
     X = 1:numel(sessions);

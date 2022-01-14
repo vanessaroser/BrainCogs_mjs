@@ -61,7 +61,7 @@ for i = 1:numel(subjects)
             else
                 yyaxis right
             end
-            ax.YAxis(j).Color = colors.(vars{j});
+            ax.YAxis(j).Color = colors.predictor.(vars{j});
         else
             %Axes scale
             xlim([0, max(X)+1]);
@@ -71,7 +71,7 @@ for i = 1:numel(subjects)
         
         if ismember(vars{j},{'cueSide','rewChoice','unrewChoice','bias'})
             for k = 1:numel(sessions)
-                plot([X(k),X(k)],se{k},'color',colors.(vars{j}),'LineWidth',lineWidth);
+                plot([X(k),X(k)],se{k},'color',colors.predictor.(vars{j}),'LineWidth',lineWidth);
             end
         end
         
@@ -93,14 +93,14 @@ for i = 1:numel(subjects)
                     ylabel('Regression Coef.');
             end
         end
-        p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.(vars{j}),...
+        p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.predictor.(vars{j}),...
             'LineWidth',lineWidth,'LineStyle','none');
     end
     
     %Simplify markers/colors for >2 vars
     symbols = {'o','^','^','_'};
     for j = 1:numel(vars)
-        faceColor = {'none',colors.(vars{j}),colors.(vars{j}),'none'};
+        faceColor = {'none',colors.predictor.(vars{j}),colors.predictor.(vars{j}),'none'};
         set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',lineWidth);
         %         p(j).MarkerFaceColor = faceColor{j};
         p(j).MarkerFaceColor = 'none';

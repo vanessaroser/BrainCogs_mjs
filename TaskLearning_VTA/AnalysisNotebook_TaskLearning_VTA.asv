@@ -3,10 +3,10 @@ close all;
 experiment = 'mjs_taskLearningWalls'; %If empty, fetch data from all experiments
 
 dirs = addGitRepo('General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs');
-dirs.data = fullfile(dirs.root,'LMaze','data');
-dirs.results = fullfile(dirs.root,'LMaze','results',experiment);
-dirs.summary = fullfile(dirs.root,'LMaze','summary',experiment);
-dirs.intake = fullfile(dirs.root,'LMaze','results');
+dirs.data = fullfile(dirs.root,'TaskLearning_VTA','data');
+dirs.results = fullfile(dirs.root,'TaskLearning_VTA','results',experiment);
+dirs.summary = fullfile(dirs.root,'TaskLearning_VTA','summary',experiment);
+dirs.intake = fullfile(dirs.root,'TaskLearning_VTA','results');
 
 create_dirs(dirs.results, dirs.summary, dirs.intake);
 

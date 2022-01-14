@@ -149,13 +149,14 @@ end
 
 if plots.glm_cueSide_priorChoice
     saveDir = fullfile(dirs.results,'GLM');
-    vars = {...
-        {'cueSide','priorChoice','bias'},...
-        {'R_cue_choice', 'R_priorChoice_choice', 'R_predictors'},...
-        {'pRightChoice', 'pRightCue'},...
-        };    
+%     vars = {...
+%         {'cueSide','priorChoice','bias'},...
+%         {'R_cue_choice', 'R_priorChoice_choice', 'R_predictors'},...
+%         {'pRightChoice', 'pRightCue'},...
+%         };   
+    vars = {{'cueSide','priorChoice','bias'}};   
     for i = 1:numel(vars)
-        figs = fig_longitudinal_glm(subjects,vars{i});
+        figs = fig_longitudinal_glm(subjects,vars{i},colors);
         save_multiplePlots(figs,saveDir);
         clearvars figs;
     end  
@@ -173,7 +174,7 @@ if plots.longitudinal_glm_choice_outcome
     %Longitudinal
     saveDir = fullfile(dirs.results,'GLM_Choice_Outcome');
     vars = {'cueSide','rewChoice','unrewChoice','bias'};   
-    figs{1} = fig_longitudinal_glm_choice_outcome( subjects, vars );
+    figs{1} = fig_longitudinal_glm_choice_outcome( subjects, vars, colors );
     figs{2} = fig_choice_autocorrelation(subjects);
     save_multiplePlots([figs{:}],saveDir);
     clearvars figs;
@@ -202,9 +203,9 @@ end
 if plots.group_performance
     saveDir = fullfile(dirs.results,'Group Performance');
     vars = ["pCorrect","pCorrect_conflict"];
-    params = struct('nSensory',4,'nAlternation',12);
+    params = struct('nSensory',4,'nAlternation',33);
     for i = 1:numel(vars)
-    figs = fig_periswitch_alternation(subjects,vars(i),params);
+    figs(i) = fig_periswitch_alternation(subjects,vars(i),params);
     end
     save_multiplePlots(figs,saveDir);
     clearvars figs;
