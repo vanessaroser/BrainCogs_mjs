@@ -1,6 +1,6 @@
 %Set paths
 close all;
-experiment = 'mjs_taskLearningWalls'; %If empty, fetch data from all experiments
+experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
 
 dirs = addGitRepo('General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs');
 dirs.data = fullfile(dirs.root,'TaskLearning_VTA','data');
@@ -20,28 +20,25 @@ dataSource = struct('remoteLogData',true,'experimentData',false,...
 exe = struct(...
     'reloadData',           true,...
     'updateExperData',      true,...
-    'motor_trajectory',     true,...
-    'model_strategy',       true,...
-    'dailyIntakeTable',     false,...
-    'writeIntake2DB',       false);
+    'motor_trajectory',     false,...
+    'model_strategy',       false);
 plots = struct(...
-    'motor_trajectory',                 true,...
-    'collision_locations',              true,...
+    'motor_trajectory',                 false,...
+    'collision_locations',              false,...
     'trial_duration',                   true,...
     'longitudinal_performance',         true,...
-    'longitudinal_glm_choice_outcome',  true,...
+    'longitudinal_glm_choice_outcome',  false,...
     'glm_cueSide_priorChoice',          false,... %Probably not needed after including glm_choice_outcome
     'glm_choice_outcome',               false,...
-    'glm_choice_conflict',              false,...
-    'group_performance',                true);
+    'group_performance',                false);
 
 %Subject info
 if exe.reloadData
     clearvars subjects;
     subjects = struct(...
-        'ID',       {"mjs20_09","mjs20_10","mjs20_18","mjs20_19","mjs20_20"},...
-        'rigNum',   {"rig1_188", "rig2_188", "rig1_188", "rig2_188", "rig1_188"},...
-        'startDate', datetime('2021-08-19'),...
+        'ID',       {"mjs20_410","mjs20_411","mjs20_412","mjs20_413"},...
+        'rigNum',   {"Bezos2", "Bezos2", "Bezos2", "Bezos2"},...
+        'startDate', datetime('2022-01-10'),...
         'experimenter', 'mjs20',...
         'waterType', 'Milk');
     
@@ -49,7 +46,7 @@ if exe.reloadData
     %Switch data source
     if dataSource.remoteLogData && ~dataSource.experimentData
         setupDataJoint_mjs();
-        subjects = getRemoteVRData( experiment, subjects ); %***Store BAD SESSION flag***
+        subjects = getRemoteVRData( experiment, subjects ); 
     elseif dataSource.DataJoint && ~dataSource.experimentData
         setupDataJoint_mjs();
         for i = 1:numel(subjects)
@@ -67,26 +64,14 @@ if exe.reloadData
     end
 end
 
-%Exclusions (should be combined with the block exclusions in getVRData())
-% subjects = excludeBadSessions(subjects,experiment);
-
 %Append Labels for Session Types
-subjects = getSessionLabels_LMaze(subjects);
+subjects = getSessionLabels_TaskLearning_VTA(subjects);
+%Exclude warmup trials from correct rate for Sensory and Alternation Mazes
+subjects = filterSessionStats(subjects, 5);
 
 %Save experimental data to matfiles by subject
 if exe.updateExperData % && ~dataSource.experimentData
     fnames = updateExperData(subjects,dirs);
-end
-
-%Generate table for daily fluid intake and weight
-if exe.dailyIntakeTable
-    intake = dailyIntakeTable(subjects, dirs);
-    if exe.writeIntake2DB
-        dirs = getDirs(experiment);
-        intakeXLS = fullfile(dirs.intake,'Daily_Intake_All_Subjects.xls');
-        tables = {action.Weighing, action.WaterAdministration};
-        writeDB_fromXLS(intakeXLS, tables)
-    end
 end
 
 %Save Stats for View-Angle and X-Trajectories
@@ -130,14 +115,13 @@ if plots.trial_duration
     clearvars figs;
 end
 
-
 %Plot Individual Longitudinal Performance
 if plots.longitudinal_performance
     %Full performance data for each subject
     saveDir = fullfile(dirs.results,'Performance');
     vars = {{'pCorrect_congruent','pCorrect_conflict'},...
         {'maxCorrectMoving_congruent','maxCorrectMoving_conflict'},...
-        {'mean_velocity','pOmit'},{'pStuck','mean_pSkid'}};
+        {'median_velocity','pOmit'},{'pStuck','median_pSkid'}};
     for i = 1:numel(vars)
         figs = fig_longitudinal_performance(subjects,vars{i},colors);
         save_multiplePlots(figs,saveDir);
@@ -163,22 +147,6 @@ if plots.longitudinal_glm_choice_outcome
     clearvars figs;
 end
 
-if plots.glm_choice_conflict
-    saveDir = fullfile(dirs.results,'GLM_Choice_Conflict');
-    vars = {{'congruent','conflict','bias'}};
-    %     vars = {...
-    %         {'Congruent','Conflict','bias'},...
-    %         {'pRightChoice', 'pConflict', 'pReward'},...
-    %         {'R_predictors','R_conflict_choice', 'R_congruent_choice'},...
-    %         {'N', 'conditionNum'},...
-    %         };
-    
-    for i = 1:numel(vars)
-        figs = fig_glm_choice_conflict(subjects,vars{i});
-        save_multiplePlots(figs,saveDir);
-        clearvars figs;
-    end
-end
 
 %Plot Group Learning Curve
 if plots.group_performance
@@ -196,11 +164,9 @@ if plots.group_performance
 end
 
 % ------------- NOTES ------
-%211020 Dropped pressure to slow ball rotation
-%211029 Introduced back dampers to slow ball rotation
-%211111 Introduced side dampers
-%211108 Introduced Air Puffs for Negative Outcome
-%211119 Reduced Cue Density from 5/cm to 3/cm
-%211123 Shortened main stem length from 200 to 150 cm
-%211126 Shortened main stem length to 100 cm for mjs09 and mjs10, later mjs18 and mjs19
-%211213 Shortened main stem length to 100 cm for mjs20
+% 220107 Started all subjects informally on Level 1 on (M412 & M413 w/ imaging)
+% 220110 Begin formal training
+% 220112 Imaged M412 to determine whether sufficient clearance was allowed for objective/FOV.
+% 220113 Switched from 2 1.5mm washers to 1 2mm washer. Headplate-to-ball elevation, approx. 27 mm.
+% 220317 Accidentally started M413 on T6 before resuming on T7...
+% 220318 Same thi..

@@ -45,7 +45,7 @@ for i = 1:numel(subjects)
     
     %Line at 0.5 for proportional quantities
     allProportional = all(ismember(vars,{'pCorrect','pCorrect_congruent','pCorrect_conflict','pOmit',...
-            'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict'}));
+            'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict','bias'}));
     X = 1:numel(subjects(i).sessions);
     if allProportional
         plot([0,X(end)+1],[0.5, 0.5],...
@@ -56,11 +56,14 @@ for i = 1:numel(subjects)
                 'Color',[0.8,0.8,0.8],'LineWidth',3);
         end
     end
-
+    if ismember(vars,{'pCorrect','bias'})
+        plot([0,X(end)+1],[0.8, 0.8],':k','LineWidth',1); %Threshold correct rate
+        plot([0,X(end)+1],[0.2, 0.2],':k','LineWidth',1); %Threshold bias
+    end
     
     yyax = {'left','right'};
     for j = 1:numel(vars)
-        %Dual Y-axes or 0.5 line for proportional quantities
+        %Dual Y-axes
         if numel(vars)>1 && ~allProportional
             yyaxis(ax,yyax{j});
             ax.YAxis(j).Color = colors.(vars{j});
@@ -116,6 +119,16 @@ for i = 1:numel(subjects)
                 ylim([0, 1]);
             case 'nCompleted'
                 ylabel('Number of completed trials');
+            case 'bias'
+                p(j).YData(sessionType=="Forced") = NaN; %Only for Sensory or Alternation
+                %Symbols for left and right
+                p(j).Marker = 'none';
+                scatter(X(p(j).YData<0),abs(p(j).YData(p(j).YData<0)),...
+                    '<','MarkerFaceColor','none','MarkerEdgeColor',p(j).Color);
+                scatter(X(p(j).YData>0),p(j).YData(p(j).YData>0),...
+                    '>','MarkerFaceColor','none','MarkerEdgeColor',p(j).Color);
+                ylabel('Choice bias');
+                legend(p); %Only include the specified variables in legend
         end
     end
 
@@ -130,8 +143,11 @@ for i = 1:numel(subjects)
     ax.PlotBoxAspectRatio = [3,2,1];
     xlim([0, max(X)+1]);
     if zoom2TMaze
+        if sessionType=="", continue %No T-maze sessions
+        else
     xlim([find(sessionType=="Sensory",1,'first')-shadeOffset, max(xlim)]);
     zoom2TMaze = false;
+        end
     end
     
     %Labels and titles

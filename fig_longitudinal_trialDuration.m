@@ -13,18 +13,18 @@ transparency = 0.2;
 
 %Colors
 colors = setPlotColors(brewColorSwatches,experiment);
-prefix = 'longitudinal_GLM';
+prefix = 'trialDuration';
 
 figIdx = 1;
 for i = 1:numel(subjects)
-    
+
     trials = subjects(i).trials;
     trialData = subjects(i).trialData;
     trialTypes = ["correct","error","congruent","conflict"];
     for j = 1:numel(trialTypes)
         idx.(trialTypes(j)) = cellfun(@(trialIdx,fwdIdx)...
             trialIdx & fwdIdx,...
-        {trials.(trialTypes(j))},{trials.forward},'UniformOutput',false);
+            {trials.(trialTypes(j))},{trials.forward},'UniformOutput',false);
     end
     idx.priorCorrect = cellfun(@(trialIdx,fwdIdx,correctIdx)...
         [false, trialIdx(1:end-1)] & fwdIdx & correctIdx,...
@@ -32,7 +32,7 @@ for i = 1:numel(subjects)
     idx.priorError = cellfun(@(trialIdx,fwdIdx,correctIdx)...
         [false, trialIdx(1:end-1)] & fwdIdx & correctIdx,...
         {trials.error},{trials.forward},idx.correct,'UniformOutput',false);
-    
+
     for j = 1:numel(conditions)
         %Extract data
         switch conditions(j)
@@ -61,54 +61,58 @@ for i = 1:numel(subjects)
                 data{2} = cellfun(@(dur,respTime,trialIdx) dur(trialIdx)-respTime(trialIdx),...
                     {trialData.duration},{trialData.response_time},idx.error,'UniformOutput',false);
         end
-    
-    
-    figs(figIdx) = figure(...
-        'Name',join([prefix, subjects(i).ID, string(conditions(j))],'_'));
-    tiledlayout(1,1);
-    ax = nexttile();
-    hold on;
-    
-    levels = cellfun(@min,{subjects(i).sessions.level});
-    values = unique(levels(isfinite(levels)));
-    for k = 1:numel(values)
-        pastLevels = levels >= values(k);% Sessions at each level
-        shading(k) = shadeDomain(find(pastLevels),...
-            ylim, shadeOffset, colors.level(values(k),:), transparency);
-    end
-    
-    %Performance as a function of training day
-    X = 1:numel(trialData);
-    for k = 1:numel(data) %eg correct vs. error
-        for kk = X
-            p(k) = plot_basicBox( X(kk), data{k}{kk}, boxWidth, lineWidth, colors.trialTypes.(labels{k}), transparency );
+
+
+        figs(figIdx) = figure(...
+            'Name',join([prefix, subjects(i).ID, string(conditions(j))],'_'));
+        tiledlayout(1,1);
+        ax = nexttile();
+        hold on;
+
+        levels = cellfun(@min,{subjects(i).sessions.level});
+        values = unique(levels(isfinite(levels)));
+        for k = 1:numel(values)
+            pastLevels = levels >= values(k);% Sessions at each level
+            shading(k) = shadeDomain(find(pastLevels),...
+                ylim, shadeOffset, colors.level(values(k),:), transparency);
         end
-    end
-        
-    %Axes scale
-    ax.PlotBoxAspectRatio = [3,2,1];
-    %Axes scale
-    rng = [min(cellfun(@(C) prctile(C,9),[data{:}])), max(cellfun(@(C) prctile(C,91),[data{:}]))];
-    xlim([0, max(X)+1]);
-    %     ylim(rng + 0.1*rng.*[-1,1]);
-    ylim([0 15]);
-    ylabel('Time to goal box (s)');
-    legend(p,labels,'Location','best','Interpreter','none');
-    
-    %Labels and titles
-    xlabel('Session number');
-    
-    title(subjects(i).ID,'interpreter','none');
-    
-    %Adjust height of shading as necessary
-    maxY = max(ylim);
-    minY = min(ylim);
-    newVert = [max(ylim), max(ylim), min(ylim), min(ylim)];
-    for j = 1:numel(shading)
-        shading(j).Vertices(:,2) = newVert;
-    end
-    clearvars shading
-    figIdx = figIdx+1;
+
+        %Performance as a function of training day
+        X = 1:numel(trialData);
+        for k = 1:numel(data) %eg correct vs. error
+            for kk = X
+                p(k) = plot_basicBox( X(kk), data{k}{kk}, boxWidth, lineWidth, colors.trialTypes.(labels{k}), transparency );
+            end
+        end
+
+        %Axes scale
+        ax.PlotBoxAspectRatio = [3,2,1];
+        %Axes scale
+        rng = [min(cellfun(@(C) prctile(C,9),[data{:}])), max(cellfun(@(C) prctile(C,91),[data{:}]))];
+        xlim([0, max(X)+1]);
+        %     ylim(rng + 0.1*rng.*[-1,1]);
+        ylim([0 15]);
+        if conditions(j)=="ITI"
+            ylabel('Intertrial Interval (s)');
+        else
+            ylabel('Time to goal box (s)');
+        end
+        legend(p,labels,'Location','best','Interpreter','none');
+
+        %Labels and titles
+        xlabel('Session number');
+
+        title(subjects(i).ID,'interpreter','none');
+
+        %Adjust height of shading as necessary
+        maxY = max(ylim);
+        minY = min(ylim);
+        newVert = [max(ylim), max(ylim), min(ylim), min(ylim)];
+        for j = 1:numel(shading)
+            shading(j).Vertices(:,2) = newVert;
+        end
+        clearvars shading
+        figIdx = figIdx+1;
     end
 end
 end %End main fcn
