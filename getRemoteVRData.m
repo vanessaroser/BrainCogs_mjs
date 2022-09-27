@@ -30,7 +30,7 @@ for i = 1:numel(subjects)
         'session_date', [],'eventTimes',struct(),...
         'duration',[],'response_time',[],...
         'position',[],'velocity',[],'mean_velocity',[],...
-        'x_trajectory',[],'theta_trajectory',[],'time_trajectory',[],...
+        'x_trajectory',[],'theta_trajectory',[],'time_trajectory',[],'positionRange',[],...
         'collision_locations',[],'pSkid',[],'stuck_locations',[],'stuck_time',[]);
 
     trials(numel(data_files),1) = ...
@@ -75,6 +75,7 @@ for i = 1:numel(subjects)
         ver = @(blockIdx) logs.version(min(blockIdx,numel(logs.version)));
         maze = @(blockIdx) ver(blockIdx).mazes(logs.block(blockIdx).mazeID).variable; %May change based on maze level
         world = @(blockIdx) ver(blockIdx).variables; %Changes with protocol
+        lStart = @(blockIdx) str2double(maze(blockIdx).lStart); 
         lCue = @(blockIdx) str2double(maze(blockIdx).lCue);
         lMem = @(blockIdx) str2double(maze(blockIdx).lMemory);
         wArm = @(blockIdx)...%Add width of arm minus out-of-range position "border"
@@ -83,7 +84,7 @@ for i = 1:numel(subjects)
 
         %Check for empty blocks or trials and remove (discuss with Alvaro!)
         logs = removeEmpty(logs,data_files(j).remote_path_behavior_file);
-        logs = excludeBadBlocks(logs, experiment); %Edit function to exclude specific blocks
+        [logs, excludeBlocks] = excludeBadBlocks(logs, experiment); %Edit function to exclude specific blocks
         if isempty(logs)
             continue
         end
@@ -92,8 +93,10 @@ for i = 1:numel(subjects)
         blockIdx = nan(1,numel([logs.block.trial]));
         [start_time, duration, response_time, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
         [position, velocity, collision_locations, stuck_locations] = deal(cell(numel(blockIdx),1));
+        
         %Initialize as one cell per block
-        [theta_trajectory, x_trajectory] = deal(cell(numel(logs.block),1)); %Matrices: nLocation x nTrial
+        [theta_trajectory, x_trajectory, time_trajectory, positionRange] =...
+            deal(cell(numel(logs.block),1)); %Matrices: nLocation x nTrial
 
         %Get maximum skid angle before engagement of friction
         maxSkidAngle = inf(1,numel(logs.block));
@@ -110,8 +113,8 @@ for i = 1:numel(subjects)
             blockIdx(firstTrial:lastTrial) = k;
             
             %Event times
-            eventTimes(blockIdx==k,1) = getTrialEventTimes(Trials);
-            
+            eventTimes(blockIdx==k,1) = getTrialEventTimes(logs, k); %Need logs and block idx for time, because restarts/new blocks cause divergent time references
+
             %Time from trial start to choice & Duration including ITI
             %***Change Based on Alvaro's Advice!***
             %   -Use trials.time and trials.start
@@ -123,13 +126,13 @@ for i = 1:numel(subjects)
             position(blockIdx==k)  = cellfun(@double,{Trials.position},'UniformOutput',false); %Derived from ViRMEn w/ collision detection, possible scaling, etc
 
             %X-position and view angle as matrices
-            ySample = 0:lMaze(k);
-            x_trajectory{k} = getTrialTrajectories({Trials.position}, 'x', ySample);
-            theta_trajectory{k} = getTrialTrajectories({Trials.position}, 'theta', ySample);
+            queryPts = -lStart(k):lMaze(k);
+            x_trajectory{k} = getTrialTrajectories({Trials.position}, 'x', queryPts);
+            theta_trajectory{k} = getTrialTrajectories({Trials.position}, 'theta', queryPts);
             
             %Time at first crossing of each Y-position
-            ySample = 0:lCue(k);
-            time_trajectory{k} = getTimebyPosition(Trials, ySample);
+            time_trajectory{k} = getTimebyPosition(Trials, eventTimes(blockIdx==k), queryPts);
+            positionRange{k} = queryPts([1,end])';
 
             %Collision locations along main stem
             yLimits = [0, str2double(maze(k).lCue)];
@@ -154,15 +157,16 @@ for i = 1:numel(subjects)
         end
 
         %Concatenate as matrix if only one maze
-        if numel(unique(cellfun(@(T) size(T,1),x_trajectory)))==1 %&&...
-                %(numel([logs.block.mazeID])==1 || isequal(logs.block.mazeID))
+        if numel(unique(cellfun(@(T) size(T,1),x_trajectory)))==1
             x_trajectory = [x_trajectory{:}];
             theta_trajectory = [theta_trajectory{:}];
             time_trajectory = [time_trajectory{:}];
+            positionRange = positionRange{1};
         else
             x_trajectory = {x_trajectory};
             theta_trajectory = {theta_trajectory};
             time_trajectory = {time_trajectory};
+            positionRange = {positionRange};
         end
 
         start_time = start_time-start_time(1); %Align to first trial
@@ -176,6 +180,7 @@ for i = 1:numel(subjects)
             'x_trajectory',x_trajectory,...
             'theta_trajectory',theta_trajectory,...
             'time_trajectory',time_trajectory,...
+            'positionRange', positionRange,...
             'velocity', {velocity},...
             'collision_locations', {collision_locations},... %Unique X,Y locations of collisions at cm resolution (X simplified to -1,1 for L/R walls)
             'stuck_locations', {stuck_locations},...
@@ -209,15 +214,12 @@ for i = 1:numel(subjects)
             %Maze level
             level(blockIdx==k) = mazeLevel(k);
         end
-        forward = forward & ~omit; %Exclude forward trials exceedig time limit
+        forward = forward & ~omit; %Exclude forward trials exceeding time limit
         err = ~correct & ~omit;
-        exclude = omit; %Exclusions as trial mask
 
-        %Prior Choice, prior outcome
-        priorLeft       = [0, left(1:end-1)];
-        priorRight      = [0, right(1:end-1)];
-        priorCorrect    = [0, correct(1:end-1)];
-        priorError      = [0, err(1:end-1)];
+        %Trial mask for exclusions
+        exclude = omit | ~forward; %Additions made downstream, eg for warm-up blocks, etc 
+        exclude(ismember(blockIdx,excludeBlocks)) = true; %Exclude trials from blocks specified in excludeBadBlocks()
 
         trials(j) = struct(...
             'left',left,'right',right,'leftCue',leftCue,'rightCue',rightCue,...

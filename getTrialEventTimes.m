@@ -26,39 +26,47 @@
 %
 %---------------------------------------------------------------------------------------------------
 
-function eventTimes = getTrialEventTimes(trials)
+function eventTimes = getTrialEventTimes(log, blockIdx)
 
+trials = log.block(blockIdx).trial;
 eventTimes(numel(trials),1) = struct(...
-    'start',[],'leftCues',[],'rightCues',[],'firstCue',[],'lastCue',[],'outcome',[],...
+    'start',[],'cues',[],'firstCue',[],'lastCue',[],'outcome',[],...
     'cueEntry',[],'turnEntry',[],'armEntry',[]); % Initialize
 
 for i = 1:numel(trials)
     %Trial start times
-    eventTimes(i).start =  trials(i).start;
-    
+    eventTimes(i).start = getTrialIterationTime(log, blockIdx, i, 1); %Time of first iteration; needs correction in some cases because the reference time for trials(i).start changes after restarts, etc. 
+     
     %Cue onset times
-    yPos = trials(i).position(:,2); %Y-position of mouse in ViRMEn, one entry per iteration
-    cueIter = arrayfun(@(P) find(yPos>P,1,"first"), [trials(i).cuePos{:}]); %First iteration after passing each cue
-    cueTimes = trials(i).start + trials(i).time(cueIter)';
+    %Note: trials(i).cueCombo sorted in ViRMEn but not cuePos or cueOnset!
+    if sum([trials(i).cueOnset{:}])>0
+        cueTimes = sort(eventTimes(i).start... %Use eventTimes.start (corrected) rather than raw 'start' times
+            + trials(i).time(find([trials(i).cueOnset{:}])))'; %trials(i).cueOnset sometimes = 0 (??)
+        eventTimes(i).cues      = cueTimes;
+        eventTimes(i).firstCue  = cueTimes(1);
+        eventTimes(i).lastCue   = cueTimes(end);
+        %     eventTimes(i).leftCues = cueTimes(logical(trials(i).cueCombo(1,:)));
+        %     eventTimes(i).rightCues = cueTimes(logical(trials(i).cueCombo(2,:)));
+    end
 
-    %Left & right cue onsets
-    eventTimes(i).leftCues = cueTimes(logical(trials(i).cueCombo(1,:)));
-    eventTimes(i).rightCues = cueTimes(logical(trials(i).cueCombo(2,:)));
-
-    %First & last cue onset
-    eventTimes(i).firstCue = cueTimes(1);
-    eventTimes(i).lastCue = cueTimes(end);
-    
     %Outcome onset times
-    eventTimes(i).outcome =  trials(i).start + trials(i).time(trials(i).iterations);
+    eventTimes(i).outcome =  eventTimes(i).start + trials(i).time(trials(i).iterations); %Use eventTimes.start (corrected) rather than raw 'start' times
     
     %Time of entry into cue region, turn region (easeway before arm entry), and arm region
     fields = ["iCueEntry","iTurnEntry","iArmEntry"];
     for j = 1:numel(fields)
-        eventTimes(i).([lower(fields{j}(2)) fields{j}(3:end)]) = []; %Initialize, eg 'eventTimes(i).turnEntry'
+        eventTimes(i).([lower(fields{j}(2)) fields{j}(3:end)]) = NaN; %Initialize, eg 'eventTimes(i).turnEntry'
         if trials(i).(fields(j)) %If boundary crossed in current trial
             eventTimes(i).([lower(fields{j}(2)) fields{j}(3:end)]) = ...
-                trials(i).start + trials(i).time(trials(i).(fields(j)));
+                eventTimes(i).start + trials(i).time(trials(i).(fields(j))); %Use eventTimes.start (corrected) rather than raw 'start' times
         end
     end
 end
+
+% --- Notes -------
+
+    %Alternative approach to Cue onset times, etc.
+%     yPos = trials(i).position(:,2); %Y-position of mouse in ViRMEn, one entry per iteration
+%     cueIter = arrayfun(@(P) find(yPos>P,1,"first"), [trials(i).cuePos{:}]); %First iteration after passing each cue position
+%     cueTimes = sort(eventTimes(i).start + trials(i).time(cueIter))'; %trials(i).cueCombo sorted in ViRMEn but not cuePos! 
+% **Remember to account for cueVisibleAt!**

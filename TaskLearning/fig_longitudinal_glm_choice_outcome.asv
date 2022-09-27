@@ -11,7 +11,7 @@ figs = gobjects(0);
 %Plotting params
 lineWidth = 1;
 shadeOffset = 0.5;
-transparency = 0.1;
+transparency = 0.2;
 prefix = 'longitudinal_GLM';
 
 for i = 1:numel(subjects)

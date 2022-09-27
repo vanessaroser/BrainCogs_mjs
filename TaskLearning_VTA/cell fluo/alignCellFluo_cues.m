@@ -16,12 +16,17 @@
 %
 %--------------------------------------------------------------------------
 
-function aligned = alignCellFluo( cells, eventTimes, params )
+function aligned = alignCellFluo_cues( cells, eventTimes, params )
+
+% Assign to output any existing aligned signals
+if isfield(cells,'aligned')
+    aligned = cells.aligned;
+end
 
 % Get nearest time index for each event time
 dFF = cell2mat(cells.dFF');
 t = cells.t; %Abbreviate
-dt = mean(diff(t),'omitnan');%Use mean dt
+dt = mean(diff(t));%Use mean dt
 rel_idx = round(params.timeWindow(1)/dt) : round(params.timeWindow(end)/dt); %In number of samples
 
 events = fieldnames(eventTimes);
@@ -43,16 +48,9 @@ for i = 1:numel(events)
     % Align signals
     aligned.(events{i}) = cell(numel(cells.dFF),1); %Initialize
     for j = 1:numel(cells.dFF)
-        %Populate matrix of dimensions nEvents  x nTimepoints
         cell_dFF = dFF(:,j);
-        aligned.(events{i}){j} = cell_dFF(idx);  
+        aligned.(events{i}){j} = cell_dFF(idx);  %Populate matrix of dimensions nTriggers x nTimepoints
         aligned.(events{i}){j}(nanIdx) = NaN; %Exclude out-of-range timepoints
-        
-        %Split rows into trial-wise cell arrays if multiple instances per trial
-        if numel(event_times) > numel(eventTimes)
-            nEvents = cellfun(@numel,{eventTimes.(events{i})}); %Number of events in each trial
-            aligned.(events{i}){j} = mat2cell(aligned.(events{i}){j},nEvents);   
-        end
     end
 end
 aligned.t = rel_idx * dt; %Time relative to specified event

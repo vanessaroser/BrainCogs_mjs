@@ -3,11 +3,11 @@
 % Modified from original sampleViewAngleVsY.m (au:Sue Ann Koay) to handle x-position or view angle
 % Michael Siniscalchi, PNI, 220503
 
-function [time_mat, maxY, iter] = getTimebyPosition(trialData, ySample)
+function [time_mat, maxY, iter] = getTimebyPosition(trialData, eventTimes, ySample)
 
 %Abbreviate
 position = {trialData.position};
-time = cellfun(@(t,st) t+st,{trialData.time},{trialData.start},'UniformOutput',false);
+time = cellfun(@(t,st) t+st,{trialData.time},{eventTimes.start},'UniformOutput',false);
 
 %Get times corresponding to input sample y-positions
 maxY            = cellfun(@(pos) cummax(pos(:,2)), position, 'UniformOutput', false); %Take cumulative max

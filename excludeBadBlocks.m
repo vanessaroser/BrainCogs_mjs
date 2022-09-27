@@ -1,6 +1,6 @@
 %For manual exclusion of sessions in which data were compromised by rig problems, etc.
 
-function [ logs, exclude ] = excludeBadBlocks( logs, experiment )
+function [ logs, excludeBlocks ] = excludeBadBlocks( logs, experiment )
 
 switch experiment
     case 'mjs_memoryMaze_NAc_DREADD_performance'
@@ -50,10 +50,13 @@ switch experiment
         exclude = {...
             "mjs20_413",datetime('16-Mar-2022'),[1,2];... %Accidental session start with T6
             "mjs20_413",datetime('17-Mar-2022'),[2,3];... %Accidental T6 (26 trials), then aborted T7
+            "mjs20_411",datetime('23-Mar-2022'),[1:4];... %Multiple restarts '220323 M411 T6 pseudorandom'
+            "mjs20_411",datetime('13-Jun-2022'),[1];...   %Unsure why there are 2 blocks...
             };
 end
 
 %Remove specified blocks prior to session data extraction
+excludeBlocks = [];
 for i = 1:size(exclude,1)
     if ismember(logs.animal.name,exclude{i,1}) &&...
             string(datetime(logs.session.start,'Format','dd-MMM-yyyy'))==exclude{i,2} &&...
@@ -62,11 +65,13 @@ for i = 1:size(exclude,1)
         return
     elseif ismember(logs.animal.name,exclude{i,1}) &&...
             string(datetime(logs.session.start,'Format','dd-MMM-yyyy'))==exclude{i,2}
+        excludeBlocks = exclude{i,3};
+%         Method 2 (obsolete)
+%                 ***This method may be incompatible with I2C data contained in
+%                 imaging frames... instead, use output variable 'exclude' to
+%                 exclude all trials in block***
 %         logs.block = logs.block(~ismember(1:numel(logs.block), exclude{i,3}));
-%
-%         ***This method may be incompatible with I2C data contained in
-%         imaging frames... instead, use output variable 'exclude' to
-%         exclude all trials in block***
+
         return
     end
 end

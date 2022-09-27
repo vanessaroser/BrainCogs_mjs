@@ -6,18 +6,18 @@ calculate.cellF                     = false; %Extract cellf and neuropilf from R
 calculate.dFF                       = false; %Calculate dF/F, with optional neuropil subtraction
 calculate.align_signals             = true; %Interpolate dF/F and align to behavioral events
 calculate.trial_average_dFF         = true; %dF/F averaged over specified subsets of trials
-calculate.decode_single_units       = false; %ROC/Selectivity for choice, outcome and rule
+calculate.encoding_model            = false; %Encoding model
 
 calculate.fluorescence = false;
 if any([calculate.cellF, calculate.dFF,... 
         calculate.align_signals,...
         calculate.trial_average_dFF,...
-		calculate.decode_single_units])
+		calculate.encoding_model])
 	calculate.fluorescence = true;
 end
 
 %% SUMMARIZE RESULTS
-summarize.behavior              = false;
+summarize.trialDFF              = false;
 summarize.imaging               = false;
 summarize.selectivity           = false;
 
@@ -36,13 +36,11 @@ figures.timeseries                      = false; %Plot all timeseries for each s
 % Combined
 figures.trial_average_dFF               = true;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
 figures.time_average_dFF                = false;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
-figures.decode_single_units             = false;
 figures.heatmap_modulation_idx          = false;  %Heatmap of selectivity idxs for COR for each session
 % Summary
-figures.summary_behavior                = false;  %Summary of descriptive stats, eg, nTrials and {trials2crit, pErr, oErr} for each rule
-figures.summary_task_related_activity   = false;
-figures.summary_modulation_heatmap      = false; %Heatmap for each celltype, all sessions, one figure each for CO&R
-figures.summary_modulation				= false; %Box/line plots of grouped selectivity results for comparison
+figures.summary_behavior                = false;    %Summary of descriptive stats, eg, nTrials and {trials2crit, pErr, oErr} for each rule
+figures.summary_selectivity_heatmap     = false;     %Heatmap of time-locked 
+figures.summary_modulation				= false;    %Box/line plots of grouped selectivity results for comparison
 
 % Validation
 figures.validation_ROIs                 = false;
@@ -69,8 +67,8 @@ mat_file.figData.fovProj        = fullfile(dirs.figures,'FOV mean projections','
 params.fluo.exclBorderWidth     = 10; %For calc_cellF: n-pixel border of FOV to be excluded from analysis
 
 % Interpolation and alignment
-params.align.timeWindow     = [-3 7]; %Also used for bootavg, etc.
-params.align.positionWindow = [-3 7]; %Also used for bootavg, etc.
+params.align.timeWindow     = [-1 3]; %Also used for bootavg, etc.
+params.align.positionWindow = [-10 90]; %Also used for bootavg, etc.
 params.align.interdt        = []; %Query intervals for interpolation in seconds (must be <0.5x original dt; preferably much smaller.)
 params.align.binWidth       = 5; %Spatial bins in cm
 
@@ -79,7 +77,8 @@ params.bootAvg.timeWindow       = params.align.timeWindow; %Also used for bootav
 params.bootAvg.positionWindow   = params.align.positionWindow; %Also used for bootavg, etc.
 params.bootAvg.dsFactor         = 3; %Downsample from interpolated rate of 1/params.interdt
 params.bootAvg.nReps            = 1000; %Number of bootstrap replicates
-params.bootAvg.CI               = 95; %Confidence interval as decimal
+params.bootAvg.CI               = 90; %Confidence interval as decimal
+params.bootAvg.subtractBaseline = false;
 params.bootAvg   = specBootAvgParams(params.bootAvg); %params.bootAvg.trigger(1:3) = "start","firstcue","outcome", etc...
 
 % ------- Single-unit decoding -------
@@ -99,30 +98,9 @@ params.bootAvg   = specBootAvgParams(params.bootAvg); %params.bootAvg.trigger(1:
 % params.decode = p;
 % clearvars p;
 
-
 %% SUMMARY STATISTICS
-% params.stats.analysis_names = {'behavior','imaging','selectivity'};
-
-%% FIGURES: COLOR PALETTE FROM CBREWER
-% Color palette from cbrewer()
-c = cbrewer('qual','Paired',10);
-colors = {'red',c(6,:),'red2',c(5,:),'blue',c(2,:),'blue2',c(1,:),'green',c(4,:),'green2',c(3,:),...
-    'purple',c(10,:),'purple2',c(9,:),'orange',c(8,:),'orange2',c(7,:)};
-% Add additional colors from Set1 & Pastel1
-c = cbrewer('qual','Set1',9);
-c2 = cbrewer('qual','Pastel1',9);
-colors = [colors {'pink',c(8,:),'pink2',c2(8,:),'gray',c(9,:),'gray2',[0.7,0.7,0.7],'black',[0,0,0]}];
-cbrew = struct(colors{:}); %Merge palettes
-clearvars colors
-
-% %Define color codes for cell types, etc.
-choiceColors = {'left',cbrew.red,'left2',cbrew.red2,'right',cbrew.blue,'right2',cbrew.blue2}; 
-ruleColors = {'sensory',cbrew.black,'sensory2',cbrew.gray,'alternation',cbrew.purple,'alternation2',cbrew.purple2}; 
-outcomeColors = {'correct',cbrew.green,'correct2',cbrew.green2,'err',cbrew.pink,'err2',cbrew.pink2,...
-    'pErr',cbrew.pink,'pErr2',cbrew.pink2,'oErr',cbrew.pink,'oErr2',cbrew.pink2,...
-    'miss',cbrew.gray,'miss2',cbrew.gray2};
-dataColors = {'data',cbrew.black,'data2',cbrew.gray};
-colors = struct(choiceColors{:}, ruleColors{:}, outcomeColors{:}, dataColors{:});
+colors = getFigColors();
+params.summary.trialAvg = specSummaryTrialAvgParams(colors);
 
 %% GLOBAL SETTINGS
 params.figs.all.colors = colors;
@@ -136,15 +114,15 @@ params.figs.fovProj.colormap        = c;
 params.figs.fovProj.overlay_ROIs    = true; %Overlay outlines of ROIs
 params.figs.fovProj.overlay_npMasks = false; %Overlay outlines of neuropil masks
 % params.figs.fovProj.expIDs          = [];
-params.figs.fovProj.expIDs = {...
-    '220404 M411 T7 1Chan';...
-    };
-
-% For plotting only selected cells
-% params.figs.fovProj.cellIDs{numel(expData)} = []; %Initialize
-params.figs.fovProj.cellIDs(restrictExpIdx({expData.sub_dir},params.figs.fovProj.expIDs)) = {... % One {} per session, containing cellIDs
-    {'001','002','003','004'};...
-    };
+% params.figs.fovProj.expIDs = {...
+%     '220404 M411 T7 1Chan';...
+%     };
+% 
+% % For plotting only selected cells
+% % params.figs.fovProj.cellIDs{numel(expData)} = []; %Initialize
+% params.figs.fovProj.cellIDs(restrictExpIdx({expData.sub_dir},params.figs.fovProj.expIDs)) = {... % One {} per session, containing cellIDs
+%     {'001','002','003','004'};...
+%     };
 
 % %% FIGURE: RAW BEHAVIOR
 % params.figs.behavior.window = params.behavior.timeWindow; 
@@ -152,16 +130,16 @@ params.figs.fovProj.cellIDs(restrictExpIdx({expData.sub_dir},params.figs.fovProj
 
 %% FIGURE: CELLULAR FLUORESCENCE TIMESERIES FOR ALL NEURONS
 p = params.figs.all; %Global figure settings: colors structure, etc.
-[p.expIDs, p.cellIDs] = list_exampleCells('timeseries');
-% p.expIDs           = [];
-% p.cellIDs          = [];
-p.trialMarkers     = false;
+% [p.expIDs, p.cellIDs] = list_exampleCells('timeseries');
+p.expIDs           = [];
+p.cellIDs          = [];
+p.trialMarkers     = true;
 p.trigTimes        = 'cueTimes'; %'cueTimes' or 'responseTimes'
 p.ylabel_cellIDs   = true;
 p.spacing          = 10; %Spacing between traces in SD 
 p.FaceAlpha        = 0.2; %Transparency for rule patches
-p.LineWidth        = 0.5; %LineWidth for dF/F
-p.Color            = struct('red',cbrew.red, 'blue', cbrew.blue); %Revise with params.figs.all.colors
+p.LineWidth        = 1; %LineWidth for dF/F
+p.Color            = struct('correct',colors.correct, 'error', colors.err); %Revise with params.figs.all.colors
 
 params.figs.timeseries = p;
 clearvars p;

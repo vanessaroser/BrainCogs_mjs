@@ -52,7 +52,9 @@ if figures.timeseries
     figs = gobjects(numel(expIdx),1); %Initialize figures
     %Generate figures
     for i = 1:numel(expIdx)
-        imgBeh = load(mat_file.img_beh(expIdx(i)),'sessionID','dFF','t','trials','trialData','blocks','cellID'); %Load data
+        imgBeh = load(mat_file.img_beh(expIdx(i)),'dFF','t','trials','trialData','cellID'); %Load data
+        imgBeh.sessionID = expData(i).sub_dir;
+%         params.figs.timeseries.cellIDs = ["001","005","006","008"];
         figs(i) = fig_plotAllTimeseries(imgBeh,params.figs.timeseries);         %Generate fig
     end
     %Save batch as FIG, PNG, and SVG
@@ -64,13 +66,9 @@ end
 
 % Plot trial-averaged dF/F
 if figures.trial_average_dFF
-    %     expIdx = restrictExpIdx({expData.sub_dir},params.figs.bootAvg.expIDs); %Restrict to specific sessions, if desired
-    %     cellIDs = restrictCellIDs(expIdx,params.figs.bootAvg.cellIDs); %Cell array of subsets
-
     for i = 1:numel(expData)
         %Load data
-        load(mat_file.results(i),'bootAvg');
-        load(mat_file.img_beh(i),'cellID');
+        load(mat_file.results(i),'bootAvg','cellID');
         save_dir = fullfile(dirs.figures,'Cellular fluorescence',expData(i).sub_dir);   %Figures directory: single units
         create_dirs(save_dir); %Create dir for these figures
         %Save figure for each cell plotting all combinations of choice x outcome
@@ -104,67 +102,13 @@ if figures.time_average_dFF
      end
 end
 
-% Plot ROC analyses: one figure each for choice, outcome, and rule
-if figures.decode_single_units
-    expIdx = restrictExpIdx({expData.sub_dir},params.figs.decode_single_units.expIDs); %Restrict to specific sessions, if desired
-    cellIDs = restrictCellIDs(expIdx,params.figs.decode_single_units.cellIDs); %Cell array of subsets
-    for i = expIdx
-        %Load data
-        load(mat_file.results(i),'decode');
-        load(mat_file.img_beh(i),'cellID');
-        cellIdx = getCellSubset(mat_file.img_beh(i),cellIDs{expIdx==i});
-        %Figures directory
-        %save_dir = fullfile(dirs.figures,'Single-unit modulation',expData(i).sub_dir);
-        save_dir = fullfile(dirs.figures,'Example Cells'); %Example cells
-        create_dirs(save_dir); %Create dir for these figures
-        %Figure with ROC analysis and selectivity traces
-        figs = fig_singleUnit_ROC(decode,cellIdx,expData(i).sub_dir,cellID,params.figs.decode_single_units);
-        save_multiplePlots(figs,save_dir);%,'pdf'); %save as FIG and PNG
-        clearvars figs
-    end
-end
-
 % Heatmap of selectivity traces: one figure each for choice, outcome, and rule
-if figures.heatmap_modulation_idx
-    for i = 1:numel(expData)
-        disp(['Generating modulation heatmaps for session ' num2str(i) '...']);
-        %Load data
-        load(mat_file.results(i),'decode','cellID');
-        save_dir = fullfile(dirs.figures,'Single-unit modulation');   %Figures directory
-        create_dirs(save_dir); %Create dir for these figures
-        
-        %Figure with heatmap for each behavioral variable (choice, outcome, & rule)
-        sessionID = [expData(i).sub_dir(1:end-14) ' ' expData(i).cellType];
-        figs(i) = fig_modulation_heatmap(decode,sessionID,cellID,params);
-        
-        %Figure with heatmap only for significantly modulated cells
-        figs(numel(expData)+i) = fig_modulation_heatmap(decode,sessionID,cellID,params,'sig');
-    end
-    save_multiplePlots(figs,save_dir,'svg'); %save as FIG and PNG
-    clearvars figs;
-end
-
-
-%% SUMMARY FIGURES
-
-% Heatmap of modulation indices for each cell type: one figure each for choice, outcome, and rule
-if figures.summary_modulation_heatmap
+if figures.summary_selectivity_heatmap
     %Load data
-    decode = load(mat_file.summary.selectivity,params.decode.decode_type{:});
-    load(mat_file.summary.selectivity,'t');
-    save_dir = fullfile(dirs.figures,'Summary - modulation heatmaps');   %Figures directory
-    create_dirs(save_dir); %Create dir for these figures
-    
-    %Heatmap for each behavioral variable (choice, outcome, & rule)
-    decodeType = fieldnames(decode);
-    for j = 1:numel(decodeType)
-        disp(['Generating summary figure: modulation heatmap for ' decodeType{j} '...']);
-        figs(j) = fig_summary_selectivity(...
-            decode, decodeType{j}, t, params.figs.mod_heatmap);
-        %Figure with heatmap only for significantly modulated cells
-%         figs(numel(decodeType)+j) = fig_summary_selectivity(...
-%             decode, decodeType{j}, t, params.figs.mod_heatmap, 'sig');
+    S = load(mat_file.summary.selectivity);
+    for rule = ["sensory","alternation"]
+        figs = heatmap_summarySelectivity(S.(rule), join(["selectivity_heatmap_" rule],''), params.summary.trialAvg);
+        save_multiplePlots(figs,save_dir); %save as FIG and PNG
+        clearvars figs;
     end
-    save_multiplePlots(figs,save_dir,'pdf'); %save as FIG and PNG
-    clearvars figs;
 end
