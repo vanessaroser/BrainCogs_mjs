@@ -22,7 +22,7 @@ experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiment
 
 % Set MATLAB path and get experiment-specific parameters
 dirs = getRoots();
-addGitRepo(dirs,'General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs','scim');
+addGitRepo(dirs,'General','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab','datajoint-matlab');
 setupDataJoint_mjs();
 [dirs, expData] = expData_TaskLearning_VTA1(pathList_bezosCup_VTA1);
 
