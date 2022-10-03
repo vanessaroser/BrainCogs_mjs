@@ -23,7 +23,7 @@ experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiment
 % Set MATLAB path and get experiment-specific parameters
 dirs = getRoots();
 addGitRepo(dirs,'General','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
-    'datajoint-matlab','compareVersions','GHToolbox','mym');
+    'datajoint-matlab','compareVersions','GHToolbox');
 addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
 rmpath (genpath(fullfile(dirs.code, 'datajoint-matlab', 'mym')));
 
