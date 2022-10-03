@@ -24,6 +24,9 @@ experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiment
 dirs = getRoots();
 addGitRepo(dirs,'General','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
     'datajoint-matlab','compareVersions','GHToolbox','mym');
+addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
+rmpath (genpath(fullfile(dirs.code, 'datajoint-matlab', 'mym')));
+
 setupDataJoint_mjs();
 [dirs, expData] = expData_TaskLearning_VTA1(pathList_bezosCup_VTA1);
 
