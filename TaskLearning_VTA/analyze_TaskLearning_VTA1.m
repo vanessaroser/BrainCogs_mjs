@@ -18,21 +18,16 @@
 
 clearvars;
 close all;
-experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
 
-% Set MATLAB path and get experiment-specific parameters
+% Set path
 dirs = getRoots();
-addGitRepo(dirs,'General','TankMouseVR','U19-pipeline-matlab',...
+addGitRepo(dirs,'General','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
     'datajoint-matlab','compareVersions','GHToolbox');
 addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
-addpath(fullfile(dirs.code,'BrainCogs_mjs'));
-addpath(genpath(fullfile(dirs.code,'BrainCogs_mjs','TaskLearning_VTA')));
-
-setupDataJoint_mjs();
-
-[dirs, expData] = expData_TaskLearning_VTA1(dirs);
 
 % Set parameters for analysis
+experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
+[dirs, expData] = expData_TaskLearning_VTA1(dirs);
 [calculate, summarize, figures, mat_file, params] = params_TaskLearning_VTA1(dirs,expData);
 expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
 
@@ -43,6 +38,9 @@ create_dirs(dirs.results,dirs.summary,dirs.figures);
 diary(fullfile(dirs.results,['procLog' datestr(datetime,'yymmdd')]));
 diary on;
 disp(datetime);
+
+% Connect to DataJoint
+setupDataJoint_mjs();
 
 %% CHECK DATA CONSISTENCY AND INITIALIZE FILE FOR COMBINED IMAGING-BEHAVIOR DATA
 if calculate.combined_data
