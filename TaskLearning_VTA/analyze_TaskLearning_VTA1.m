@@ -83,7 +83,8 @@ if calculate.fluorescence
         if calculate.cellF
             %Get cellular and neuropil fluorescence excluding overlapping regions and n-pixel frame
             cells = get_roiData(fullfile(dirs.data,expData(i).sub_dir,expData(i).roi_dir));
-            [cells, masks] = calc_cellF(cells, expData(i), params.fluo.exclBorderWidth);
+%           [cells, masks] = calc_cellF(cells, expData(i), params.fluo.exclBorderWidth);
+            [cells, masks] = calc_cellF_parallel(cells, expData(i), params.fluo.exclBorderWidth);
             save(mat_file.img_beh(i),'-struct','cells','-append'); %Save to dff.mat
             save(mat_file.img_beh(i),'masks','-append'); %Save to dff.mat
             clearvars stack cells masks;
@@ -91,8 +92,10 @@ if calculate.fluorescence
 
         % Calculate dF/F trace for each cell
         if calculate.dFF
-            cells = load(mat_file.img_beh(i),'cellID','cellF','npF','frameRate'); %calc_dFF() will transfer any other loaded variables to struct 'dFF'
+            cells = load(mat_file.img_beh(i),'cellID','cellF','npF','t','frameRate'); %calc_dFF() will transfer any other loaded variables to struct 'dFF'
+          
             cells = calc_dFF(cells, expData(i).npCorrFactor); %expData(i).npCorrFactor set to zero for prelim analysis
+%             cells = calc_dFF_parallel(cells, expData(i).npCorrFactor);
             save(mat_file.img_beh(i),'-struct','cells','-append');
             clearvars cells
         end

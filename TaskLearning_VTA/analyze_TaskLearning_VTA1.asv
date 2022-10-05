@@ -18,14 +18,16 @@
 
 clearvars;
 close all;
-experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
 
-% Set MATLAB path and get experiment-specific parameters
-addGitRepo('General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs','scim');
-setupDataJoint_mjs();
-[dirs, expData] = expData_TaskLearning_VTA1(pathList_bezosCup_VTA1);
+% Set path
+dirs = getRoots();
+addGitRepo(dirs,'General','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
+    'datajoint-matlab','compareVersions','GHToolbox');
+addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
 
 % Set parameters for analysis
+experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
+[dirs, expData] = expData_TaskLearning_VTA1(dirs);
 [calculate, summarize, figures, mat_file, params] = params_TaskLearning_VTA1(dirs,expData);
 expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
 
@@ -36,6 +38,9 @@ create_dirs(dirs.results,dirs.summary,dirs.figures);
 diary(fullfile(dirs.results,['procLog' datestr(datetime,'yymmdd')]));
 diary on;
 disp(datetime);
+
+% Connect to DataJoint
+setupDataJoint_mjs();
 
 %% CHECK DATA CONSISTENCY AND INITIALIZE FILE FOR COMBINED IMAGING-BEHAVIOR DATA
 if calculate.combined_data
@@ -78,7 +83,8 @@ if calculate.fluorescence
         if calculate.cellF
             %Get cellular and neuropil fluorescence excluding overlapping regions and n-pixel frame
             cells = get_roiData(fullfile(dirs.data,expData(i).sub_dir,expData(i).roi_dir));
-            [cells, masks] = calc_cellF(cells, expData(i), params.fluo.exclBorderWidth);
+%           [cells, masks] = calc_cellF(cells, expData(i), params.fluo.exclBorderWidth);
+            [cells, masks] = calc_cellF_parallel(cells, expData(i), params.fluo.exclBorderWidth);
             save(mat_file.img_beh(i),'-struct','cells','-append'); %Save to dff.mat
             save(mat_file.img_beh(i),'masks','-append'); %Save to dff.mat
             clearvars stack cells masks;
@@ -86,8 +92,10 @@ if calculate.fluorescence
 
         % Calculate dF/F trace for each cell
         if calculate.dFF
-            cells = load(mat_file.img_beh(i),'cellID','cellF','npF','frameRate'); %calc_dFF() will transfer any other loaded variables to struct 'dFF'
+            cells = load(mat_file.img_beh(i),'cellID','cellF','npF','t','frameRate'); %calc_dFF() will transfer any other loaded variables to struct 'dFF'
+          
             cells = calc_dFF(cells, expData(i).npCorrFactor); %expData(i).npCorrFactor set to zero for prelim analysis
+%             cells = calc_dFF_parallel(cells, expData(i).npCorrFactor);
             save(mat_file.img_beh(i),'-struct','cells','-append');
             clearvars cells
         end

@@ -27,7 +27,7 @@
 %
 %--------------------------------------------------------------------------
 
-function [cells, masks] = calc_cellF( cells, expData, borderWidth )
+function [cells, masks] = calc_cellF_parallel( cells, expData, borderWidth )
 
 %Get image info for the series of stacks
 nX = expData.img_beh.imageWidth;
@@ -35,11 +35,9 @@ nY = expData.img_beh.imageHeight;
 nStacks = numel(expData.reg_path);
 nFrames = expData.img_beh.nFrames;
 
-%Convert from cell arrays to 3d matrices
-cellMasks = cell2mat(cells.cellMask);
-cellMasks = reshape(cellMasks,[nY,nX,numel(cells.cellMask)]);
-npMasks = cell2mat(cells.npMask);
-npMasks = reshape(npMasks,[nY,nX,numel(cells.npMask)]);
+%Convert from cell arrays to 3d matrices to project common masks across rois
+cellMasks = reshape(cell2mat(cells.cellMask),[nY,nX,numel(cells.cellMask)]); %dim:nY,nX,nROIs
+npMasks = reshape(cell2mat(cells.npMask),[nY,nX,numel(cells.npMask)]);
 
 %Generate inclusion/exclusion masks
 masks.include = false(nX,nY); %Initialize
@@ -53,50 +51,47 @@ masks.include(sum(cellMasks,3)==1 & ~masks.exclude) = true; %Logical idx for all
 
 %% Get cellular and neuropil fluorescence, excluding Frame and Overlapping regions
 
-% Remove entries for cells excluded in cellROI.m
-cellMasks = cellMasks(:,:,~cells.exclude); %Exclude exclusion masks
-cells.cellID = cells.cellID(~cells.exclude);
-cells.cellID = cells.cellID(:);
-cells = rmfield(cells,'exclude');
-
 disp(['Getting cellular and neuropil fluorescence, excluding '...
     num2str(borderWidth) '-pixel frame and overlapping regions...']);
 
-% Pre-allocate memory and define spatial masks
-cellf =     cell([size(cellMasks,3),1]);
-neuropilf = cell([size(cellMasks,3),1]);
-roi =       cell([size(cellMasks,3),1]);
-npMask =    cell([size(cellMasks,3),1]);
+% Remove entries for cells excluded in cellROI.m
+cellMasks = cellMasks(:,:,~cells.exclude); %Exclude exclusion masks
+npMasks = npMasks(:,:,~cells.exclude); 
+cells.cellID = cells.cellID(~cells.exclude);
+cells = rmfield(cells,'exclude');
 
-[cellf, neuropilf] = deal(NaN(numel(roi),sum(nFrames)));
+% Pre-allocate memory and define spatial masks
+[roi, npMask] = deal(cell([size(cellMasks,3),1]));
 for j = 1:numel(roi)
     roi{j} = logical(cellMasks(:,:,j) & ~masks.exclude); %Cell mask from cellROI, excluding specified regions
     npMask{j} = logical(npMasks(:,:,j) & ~masks.exclude); %Neuropil mask from cellROI, excluding specified regions
 end
 
-% Get mean fluorescence within each ROI and neuropil mask, for each frame
-%ScanImageTiffReader now 10x faster than loading pre-saved MAT files containing stacks
-for i = 1:nStacks
-    S = loadtiffseq(expData.reg_path{i}); %Load registered stack
-    idx = sum(nFrames(1:i))-nFrames(i)+1 : sum(nFrames(1:i)); %startIdx : endIdx
-    for j = 1:numel(idx)
-        img = S(:,:,j); %single frame
-        for k = 1:numel(roi)
-            %Assign first as cell x F matrix, then assign to the larger
-            %array after parfor loop (?)
-            cellf{k}(idx(j))     = mean(img(roi{k})); %mean pixel value within ROI
-            neuropilf{k}(idx(j)) = mean(img(npMask{k})); %same for neuropil mask
-        end
+%Load and Process Stacks in Parallel
+[cellF, npF] = deal(cell(1,nStacks)); %Cells for collecting mean F (nROI x nFrames) for each image stack
+regPath = expData.reg_path(:);
+parfor i = 1:nStacks
+    stack = loadtiffseq(regPath{i}); %Load registered stack
+    [fi, npfi] = deal(zeros(numel(roi),nFrames(i),"like",stack)); %Cellular fluorescence, neuropil fluorescence in stack(i)
+    %For each ROI, index pixels x time, reshape, take mean across pixels
+    for k = 1:numel(roi)
+        fi(k,:) = getTrace(stack, roi{k}); %Fluorescence trace from roi{k} across frames in stack
+        npfi(k,:) = getTrace(stack, npMask{k}); %#ok<PFBNS> %Same for neuropil mask
     end
-    disp(['Frame ' num2str(idx(end)) '/' num2str(sum(nFrames))]);
-    clearvars S
+    cellF{i} = fi;
+    npF{i} = npfi;
 end
 
 %Store in structure
-cells.cellF = cellf;
-cells.npF = neuropilf;
+cells.cellF = mat2cell(cell2mat(cellF), ones(1,numel(roi)), sum(nFrames));
+cells.npF = mat2cell(cell2mat(npF), ones(1,numel(roi)), sum(nFrames));
 cells.t = expData.img_beh.t;
 cells.cellMask = roi;
 cells.npMask = npMask;
 
-
+function F = getTrace( stack, pixMask )
+nPix = sum(pixMask,"all");
+nFrames = size(stack,3);
+pixMask = repmat(pixMask,1,1,nFrames); %3D mask of pixels across frames
+pixF = reshape(stack(pixMask),[nPix,nFrames]); %Extract values indexed by pixMask
+F = mean(pixF,1);

@@ -23,6 +23,11 @@ if nargin < 2
     corrFactor = 0;
 end
 
+%Estimate frame rate if metadata could not be extracted (ie using ScanImageTiffReader) 
+if ~isfield(cells,'frameRate')
+    cells.frameRate = 1/mean(diff(cells.t));
+end
+
 % Set sliding window to estimate F0 (baseline fluorescence)
 win = 10*60*cells.frameRate;  %window duration = 10 minutes
 nROIs = numel(cells.cellF);
