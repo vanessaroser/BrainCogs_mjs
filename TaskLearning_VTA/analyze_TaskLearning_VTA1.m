@@ -83,8 +83,9 @@ if calculate.fluorescence
         if calculate.cellF
             %Get cellular and neuropil fluorescence excluding overlapping regions and n-pixel frame
             cells = get_roiData(fullfile(dirs.data,expData(i).sub_dir,expData(i).roi_dir));
-%           [cells, masks] = calc_cellF(cells, expData(i), params.fluo.exclBorderWidth);
-            [cells, masks] = calc_cellF_parallel(cells, expData(i), params.fluo.exclBorderWidth);
+            [cells, masks] = calc_cellF(cells, expData(i), params.fluo.exclBorderWidth);
+%           [cells, masks] = calc_cellF_parallel(cells, expData(i), params.fluo.exclBorderWidth);
+%           [cells, masks] = calc_cellF_forloop(cells, expData(i), params.fluo.exclBorderWidth);
             save(mat_file.img_beh(i),'-struct','cells','-append'); %Save to dff.mat
             save(mat_file.img_beh(i),'masks','-append'); %Save to dff.mat
             clearvars stack cells masks;
