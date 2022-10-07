@@ -1,6 +1,11 @@
 
 function [ stack, tags ] = loadtiffseq( full_path, method )
 
+%Attempt to import ScanImage Tiff Reader if it exists
+try import ScanImageTiffReader.ScanImageTiffReader;
+catch err
+end
+
 if nargin<2
     method = 'TiffLib'; %Default; slower than ScanImageTiffReader, but does not require OS-specific MEX files
 end
@@ -52,7 +57,7 @@ switch method
 
     case 'scim'
         %Import TiffReader
-        import ScanImageTiffReader.ScanImageTiffReader; %Requires OS-specific MEX files
+%         import ScanImageTiffReader.ScanImageTiffReader; %Requires OS-specific MEX files
         %Extract Data
         reader = ScanImageTiffReader(full_path); %Create reader object
         stack = permute(reader.data,[2,1,3]); %TiffReader transposes data relative to TiffLib/ImageJ (and every other MATLAB reader)

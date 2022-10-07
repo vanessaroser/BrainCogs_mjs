@@ -27,7 +27,7 @@
 %
 %--------------------------------------------------------------------------
 
-function [cells, masks] = calc_cellF_parallel( cells, expData, borderWidth )
+function [cells, masks] = calc_cellF( cells, expData, borderWidth )
 
 %Get image info for the series of stacks
 nX = expData.img_beh.imageWidth;
