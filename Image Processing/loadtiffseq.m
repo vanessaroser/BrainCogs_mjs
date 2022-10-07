@@ -1,11 +1,6 @@
 
 function [ stack, tags ] = loadtiffseq( full_path, method )
 
-%Attempt to import ScanImage Tiff Reader if it exists
-try import ScanImageTiffReader.ScanImageTiffReader;
-catch err
-end
-
 if nargin<2
     method = 'TiffLib'; %Default; slower than ScanImageTiffReader, but does not require OS-specific MEX files
 end
