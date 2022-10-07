@@ -72,7 +72,7 @@ end
 regPath = expData.reg_path(:);
 parfor i = 1:nStacks
     stack = loadtiffseq(regPath{i}); %Load registered stack
-    [fi, npfi] = deal(zeros(numel(roi),nFrames(i),"like",stack)); %Cellular fluorescence, neuropil fluorescence in stack(i)
+    [fi, npfi] = deal(nan(numel(roi),nFrames(i))); %Cellular fluorescence, neuropil fluorescence in stack(i)
     %For each ROI, index pixels x time, reshape, take mean across pixels
     for k = 1:numel(roi)
         fi(k,:) = getTrace(stack, roi{k}); %Fluorescence trace from roi{k} across frames in stack
