@@ -32,9 +32,9 @@ summarize.table_comparative_stats   = false;
 figures.raw_behavior                    = false;
 % Imaging 
 figures.FOV_mean_projection             = false;
-figures.timeseries                      = false; %Plot all timeseries for each session
+figures.timeseries                      = true; %Plot all timeseries for each session
 % Combined
-figures.trial_average_dFF               = false;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
+figures.trial_average_dFF               = true;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
 figures.time_average_dFF                = false;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
 figures.heatmap_modulation_idx          = false;  %Heatmap of selectivity idxs for COR for each session
 % Summary

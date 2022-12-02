@@ -9,8 +9,8 @@
 clearvars;
 
 %Params
-data_dir = 'Y:\Michael\_ROI Selection';
-subject_ID = {'M411','M413'}; %User enters subject name, or other string to use as filter for dirs to search
+data_dir = 'X:\michael\network-batch\registered';
+subject_ID = {'M413'}; %User enters subject name, or other string to use as filter for dirs to search
 segWidth = 80; %width of viewing box in pixels
 
 for j = 1:numel(subject_ID)
@@ -19,37 +19,39 @@ for j = 1:numel(subject_ID)
     for i = 1:numel(temp)
         dirs.sessions{i,:} = fullfile(data_dir,temp(i).name);
     end
-    
+
     % MAT file to save all ROIs from a given subject
     master_file = fullfile(data_dir,['master_rois_' subject_ID{j} '.mat']); %Master ROI file
     
-    for i=1:numel(dirs.sessions)
+    %Find existing ROI directories
+    for i = 1:numel(dirs.sessions)
         temp = dir(fullfile(dirs.sessions{i},'ROI*.tif'));
         temp = temp(temp.isdir); %Get only the directories
         if ~isempty(temp)
-            dirs.roi{i,:} = fullfile(dirs.sessions{i},temp.name);
+            dirs.roi(i,:) = string(fullfile(dirs.sessions{i},temp.name));
         end
     end
-    
+    dirs.roi = dirs.roi(~ismissing(dirs.roi)); %Filter sessions with ROIs
+
     %Get mean projection from each imaging session
     for i = 1:numel(dirs.roi)
         S = load(fullfile(dirs.roi{i},'roiData.mat'),'mean_proj','filename');
         mean_proj{i}= S.mean_proj;
         fname_stack{i,:} = S.filename;
     end
-    
+
     %% Get frame segment and boundaries surrounding each ROI from each session
-    
+
     %Get ROI data from all sessions
     S = getMasterROIs(dirs.roi,master_file); %Saves as 'master_rois_('subject_ID{j}').mat'
     [nX,nY,~] = size(mean_proj{1});
-    
+
     for i = 1:numel(S.cell_ID)
         frameSegment(i).cell_ID = S.cell_ID{i};
         %Label with imaging date
         [startIdx,endIdx] = regexp(S.fname_stack{i},'\d{6}');
         frameSegment(i).date = S.fname_stack{i}(startIdx:endIdx);
-        
+
         [Y,X] = find(S.bw{i});
         %Get X and Y boundaries of pixel region
         x = round(mean(X) + [-(segWidth-1)/2, (segWidth-1)/2]);
@@ -88,13 +90,13 @@ for j = 1:numel(subject_ID)
         frameSegment(i).roi = [bounds{1}(:,2) bounds{1}(:,1)]; %Boundary coordinates in xy
     end
     save(master_file,'frameSegment','-append');
-    
+
     %% Create figure for each series of frame segments
     save_dir = fullfile(data_dir,['master_rois_' subject_ID{j}]);
     mkdir(save_dir);
     for i = 1:numel(frameSegment)
         f = figure('Visible','on','NumberTitle','off');
-        
+
         %Subplot for each session
         nRows = 10; %For grid of subplots
         p = subplot(2,1,1);
@@ -103,11 +105,11 @@ for j = 1:numel(subject_ID)
         p.YTickLabel = []; p.XTickLabel = [];
         p.Title.String = [frameSegment(i).date,' ','Cell ',frameSegment(i).cell_ID];
         axis square;
-        
+
         q = subplot(2,1,2);
         plot(S.cellf{i}); hold on;
         q.YTickLabel = []; q.XTickLabel = [];
-        
+
         f.Name = [frameSegment(i).date ' cell_' frameSegment(i).cell_ID];
         save_name = fullfile(save_dir,f.Name);
         savefig(f,save_name);
