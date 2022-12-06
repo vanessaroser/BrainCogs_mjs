@@ -69,9 +69,9 @@ end
 
 %Load and Process Stacks in Parallel
 [cellF, npF] = deal(cell(1,nStacks)); %Cells for collecting mean F (nROI x nFrames) for each image stack
-regPath = expData.reg_path(:);
+regPath = expData.reg_path(:); %Unpack for parallelization
 parfor i = 1:nStacks
-    stack = loadtiffseq(regPath{i}); %Load registered stack
+    stack = loadtiffseq(regPath(i)); %Load registered stack
     [fi, npfi] = deal(nan(numel(roi),nFrames(i))); %Cellular fluorescence, neuropil fluorescence in stack(i)
     %For each ROI, index pixels x time, reshape, take mean across pixels
     for k = 1:numel(roi)
