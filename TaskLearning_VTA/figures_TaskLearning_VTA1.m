@@ -5,20 +5,21 @@
 % NOTE: Use header only if run independently of 'analyze_RuleSwitching.m'
 %
 %---------------------------------------------------------------------------------------------------
-% clearvars;
+function figures_TaskLearning_VTA1( search_filter)
 
-% Set MATLAB path and get experiment-specific parameters
-% [dirs, expData] = expData_RuleSwitching(pathlist_RuleSwitching);
-% [dirs, expData] = expData_RuleSwitching_DEVO(pathlist_RuleSwitching); %For processing/troubleshooting subsets
+% Set path
+dirs = getRoots();
+addGitRepo(dirs,'General','iCorre-Registration','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
+    'datajoint-matlab','compareVersions','GHToolbox');
+addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64'))); %For DataJoint
 
-% [calculate, summarize, figures, mat_file, params] = params_RuleSwitching(dirs,expData);
-% expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
-% 
-% % Begin logging processes
-% diary(fullfile(dirs.results,['procLog' datestr(datetime,'yymmdd')])); 
-% diary on;
-% disp(datetime);
+% Session-specific metadata
+[dirs, expData] = expData_TaskLearning_VTA1(dirs);
+expData = expData(contains({expData(:).sub_dir}', search_filter)); %Filter by data-directory name, etc.
 
+% Set parameters for analysis
+[calculate, ~, figures, mat_file, params] = params_TaskLearning_VTA1(dirs, expData);
+expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
 
 %% FIGURES - IMAGING
 

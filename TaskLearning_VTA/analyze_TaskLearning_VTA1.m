@@ -15,9 +15,7 @@
 
 % *** Revision Notes ***
 % - Block Exclusions should flow to trials.exclude-- so that I2C Data remain consistent.
-
-clearvars;
-close all;
+function analyze_TaskLearning_VTA1( search_filter )
 
 % Set path
 dirs = getRoots();
@@ -25,9 +23,12 @@ addGitRepo(dirs,'General','iCorre-Registration','BrainCogs_mjs','TankMouseVR','U
     'datajoint-matlab','compareVersions','GHToolbox');
 addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
 
+% Session-specific metadata
+[dirs, expData] = expData_TaskLearning_VTA1(dirs);
+expData = expData(contains({expData(:).sub_dir}', search_filter)); %Filter by data-directory name, etc.
+
 % Set parameters for analysis
 experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
-[dirs, expData] = expData_TaskLearning_VTA1(dirs);
 [calculate, summarize, figures, mat_file, params] = params_TaskLearning_VTA1(dirs, expData);
 expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
 
@@ -109,12 +110,12 @@ if calculate.fluorescence
         % Align dF/F traces to specified behavioral event
         if calculate.align_signals
             cells = load(mat_file.img_beh(i),'dFF','t');
-            load(mat_file.img_beh(i),'trials','trialData','sessions');
-            trialDFF = alignCellFluo(cells,trialData.eventTimes,params.align);
+            load(mat_file.img_beh(i),'trialData');
+            trialDFF = alignCellFluo(cells, trialData.eventTimes, params.align);
             [trialDFF.cueRegion, trialDFF.position] = ...
-                alignFluoByPosition(cells,trialData,params.align);
+                alignFluoByPosition(cells, trialData, params.align);
             save(mat_file.img_beh(i),'trialDFF','-append');
-            clearvars cells trials trialData trialDFF
+            clearvars cells trialData trialDFF
         end
 
         % Event-related cellular fluorescence
