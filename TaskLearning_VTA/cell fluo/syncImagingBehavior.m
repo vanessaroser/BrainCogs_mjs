@@ -63,7 +63,7 @@ meanTime = meanTime(~exclIdx);
 % xlabel('Frame number');
 
 %Interpolate missing time values
-stackInfo.t = interp1(frameNum,meanTime,frameNum(1):frameNum(1)+sum(stackInfo.nFrames)-1)';
+stackInfo.t = interp1(frameNum, meanTime, frameNum(1):frameNum(1)+sum(stackInfo.nFrames)-1)';
 
 % %Troubleshooting plot 3
 % missing(priorMissIdx) = true;

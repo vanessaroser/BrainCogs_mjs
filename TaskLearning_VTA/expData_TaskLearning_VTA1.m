@@ -10,11 +10,11 @@ function [ dirs, expData ] = expData_TaskLearning_VTA1(dirs)
 %   dirs:        The subfolder structure within data_dir to work with
 %   expData:     Info regarding each experiment
 
-dirs.data = fullfile(dirs.root,'TaskLearning_VTA','Data'); 
-dirs.notebook = fullfile(dirs.root,'TaskLearning_VTA','Notebook'); 
-dirs.results = fullfile(dirs.root,'TaskLearning_VTA','Results');
-dirs.summary = fullfile(dirs.root,'TaskLearning_VTA','Summary');
-dirs.figures = fullfile(dirs.root,'TaskLearning_VTA','Figures');
+dirs.data = fullfile(dirs.root,'task-learning-vta','data'); 
+dirs.notebook = fullfile(dirs.root,'task-learning-vta','notebook'); 
+dirs.results = fullfile(dirs.root,'task-learning-vta','results');
+dirs.summary = fullfile(dirs.root,'task-learning-vta','summary');
+dirs.figures = fullfile(dirs.root,'task-learning-vta','figures');
 
 %% First VTA Cohort (N=4)
 
@@ -30,6 +30,7 @@ expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 6;
 expData(i).npCorrFactor = 0.3;
 i = i+1;
+
 expData(i).sub_dir = '220311 M413 T7';
 expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 7;

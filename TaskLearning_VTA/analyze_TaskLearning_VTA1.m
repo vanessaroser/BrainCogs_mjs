@@ -21,14 +21,14 @@ close all;
 
 % Set path
 dirs = getRoots();
-addGitRepo(dirs,'General','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
+addGitRepo(dirs,'General','iCorre-Registration','BrainCogs_mjs','TankMouseVR','U19-pipeline-matlab',...
     'datajoint-matlab','compareVersions','GHToolbox');
 addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
 
 % Set parameters for analysis
 experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
 [dirs, expData] = expData_TaskLearning_VTA1(dirs);
-[calculate, summarize, figures, mat_file, params] = params_TaskLearning_VTA1(dirs,expData);
+[calculate, summarize, figures, mat_file, params] = params_TaskLearning_VTA1(dirs, expData);
 expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
 
 % Generate directory structure

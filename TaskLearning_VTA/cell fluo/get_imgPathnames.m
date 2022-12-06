@@ -8,13 +8,13 @@ function expData = get_imgPathnames(dirs,expData,idx)
 
 % Get paths to raw and registered imaging data, and define path for matfiles
 raw_dir = fullfile(dirs.data,expData(idx).sub_dir,'raw');
-reg_dir = fullfile(dirs.data,expData(idx).sub_dir,'registered tiff');
+reg_dir = fullfile(dirs.data,expData(idx).sub_dir,'registered-chan1');
 mat_dir = fullfile(dirs.data,expData(idx).sub_dir,'registered mat');
 stackInfo = fullfile(dirs.data,expData(idx).sub_dir,'stack_info.mat');
 
 %Location of raw data or stack info
 if exist(stackInfo,'file')
-    load(stackInfo,'rawFileName');
+    load(stackInfo,'rawFileName'); %**Add function to iCorre, after tiff2mat()
 else
     flist = dir(fullfile(raw_dir,'*.tif'));
     [~,I] = sort([flist.datenum]); %Sort by datenum: sorting by filename fails if insufficient leading zeros 
