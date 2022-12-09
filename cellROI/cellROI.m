@@ -700,6 +700,7 @@ handles.cellf = {}; %Cell array containing mean cellular fluorescence for each R
 handles.curr_ROI = []; %Vertices of current ROI patch
 handles.curr_cellf = []; %Cellular fluorescence from current ROI
 handles.cellMask = false(size(handles.stack,1),size(handles.stack,2)); %Logical mask for the currently selected ROI
+handles.cellMasksAll = false(size(handles.stack,1),size(handles.stack,2)); %3D array to store all cell masks
 handles.save_names = {}; %Cell array of strings; filenames for save
 handles.check_overwrite = true; %Check before overwriting file on save
 handles.excludeROI = false; %Logical vector indicating excluded regions (excluded from neuropil and flagged in ROI file)

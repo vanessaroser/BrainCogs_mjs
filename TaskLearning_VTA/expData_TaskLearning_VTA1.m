@@ -36,6 +36,13 @@ expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 7;
 expData(i).npCorrFactor = 0.3;
 i = i+1;
+
+expData(i).sub_dir = '220701 M413 T7';
+expData(i).subjectID = "mjs20_413";
+expData(i).mainMaze = 7;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
+
 % 
 % expData(i).sub_dir = '220615 M413 T7';
 % expData(i).subjectID = "mjs20_413";
@@ -43,11 +50,7 @@ i = i+1;
 % expData(i).npCorrFactor = 0.3;
 % i = i+1;
 % 
-% expData(i).sub_dir = '220701 M413 T7';
-% expData(i).subjectID = "mjs20_413";
-% expData(i).mainMaze = 7;
-% expData(i).npCorrFactor = 0.3;
-% i = i+1;
+
 % 
 % expData(i).sub_dir = '220323 M411 T6 pseudorandom';
 % expData(i).subjectID = "mjs20_411";

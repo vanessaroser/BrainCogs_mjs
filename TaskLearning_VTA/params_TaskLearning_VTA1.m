@@ -49,7 +49,6 @@ figures.validation_alignment            = false;
 %% PATHS TO SAVED DATA
 %By experiment
 mat_file.stack_info     = @(idx) fullfile(dirs.data,expData(idx).sub_dir,'stack_info.mat');
-mat_file.cell_fluo      = @(idx) fullfile(dirs.results,expData(idx).sub_dir,'cell_fluo.mat');
 mat_file.img_beh        = @(idx) fullfile(dirs.results,expData(idx).sub_dir,'img_beh.mat');
 mat_file.results        = @(idx) fullfile(dirs.results,expData(idx).sub_dir,'results.mat');
 %Aggregated

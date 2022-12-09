@@ -165,4 +165,4 @@ end
 
 %% FIGURES
 
-figures_TaskLearning_VTA1; %In a separate script for brevity.
+figures_TaskLearning_VTA1(search_filter); %In a separate script for brevity.
