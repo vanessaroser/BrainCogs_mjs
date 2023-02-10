@@ -212,6 +212,10 @@ refresh_Axis(1,handles);
 % --- PUSHBUTTON: SELECT CIRCLE (executes on button press.)
 function pushbutton_selectCircle_Callback(hObject, eventdata, handles)
 
+%Store active select-function
+handles.selectCircle_active = true; %Circle ROI
+handles.recalcCorr_active = false; %Pixel-correlation --> ROI
+
 %Refresh axes
 %handles.curr_ROI = [];
 refresh_Axis([1:4],handles);
@@ -266,6 +270,10 @@ guidata(hObject, handles); %Save user data
 %    note: also performs initial calculation after pushbutton SELECT PIXEL is pressed.
 function pushbutton_recalcCorr_Callback(hObject, eventdata, handles)
 
+%Store active select-function
+handles.recalcCorr_active = true; %Pixel-correlation --> ROI
+handles.selectCircle_active = false; %Circle ROI
+
 %Determine square to correlate
 [nX,nY,~] = size(handles.stack);
 X = handles.ginput{1}; %ginput from SELECT PIXEL pushbutton callback
@@ -299,7 +307,8 @@ end
 
 %Threshold by percentile specified in edit box
 temp = cc_mat(cc_mat>0);
-low_bound = prctile(temp,str2double(handles.edit_XCorrLowerBound.String)*100); %Get lower bound from edit box
+thresh_perc = min([max([0,str2double(handles.edit_XCorrLowerBound.String)*100]),100]);
+low_bound = prctile(temp,thresh_perc); %Get lower bound from edit box
 
 %Plot histogram of R-values
 cla(handles.axes4);
@@ -310,17 +319,21 @@ bar(handles.axes4,edges,counts,'histc');
 plot(handles.axes4,[low_bound low_bound],[0 1.1*max(counts)],'r','LineWidth',1);
 xlim(handles.axes4,[0,1]);
 temp = max(counts(edges>low_bound));
-ylim(handles.axes4,[0,1.1*temp]); %ylim set to 1.1 * maximum count above threshold
 
-%Display patch and corresponding DFF
-BW = (cc_mat>low_bound); %Get logical mask of pixels exceeding threshold
-BW = ~bwareaopen(~BW,10,8); %Remove small holes from pixel mask
-handles.cellMask = bwareafilt(BW,1,4); %Keep only the largest region; 'conn'=4
+if isempty(temp)
+    return
+else
+    %Display patch and corresponding DFF
+    ylim(handles.axes4,[0,1.1*temp]); %ylim set to 1.1 * maximum count above threshold
+    BW = (cc_mat>low_bound); %Get logical mask of pixels exceeding threshold
+    BW = ~bwareaopen(~BW,10,8); %Remove small holes from pixel mask
+    handles.cellMask = bwareafilt(BW,1,4); %Keep only the largest region; 'conn'=4
 
-[handles.curr_ROI, handles.curr_cellf] = roiData(handles); %Store cellF and patch vertices in memory
+    [handles.curr_ROI, handles.curr_cellf] = roiData(handles); %Store cellF and patch vertices in memory
 
-guidata(hObject, handles); %Save user data
-refresh_Axis((1:3),handles); %Refresh left & right axes
+    guidata(hObject, handles); %Save user data
+    refresh_Axis((1:3),handles); %Refresh left & right axes
+end
 
 %--- PUSHBUTTON: SAVE (executes on corresponding button press) ------------
 function pushbutton_savetraces_Callback(hObject, eventdata, handles)
@@ -404,10 +417,15 @@ for i = 1:numel(handles.save_names)
     try
         S = load(fullfile(handles.save_dir,handles.save_names{i}),...
             'bw','cellf','subtractmask','neuropilf'); %s.bw is logical mask
-        if handles.checkbox_loadNeuropilData.Value && isfield(S,'subtractmask')
-            handles.neuropilf{i} = S.neuropilf;         %Get saved neuropil data
-            handles.npPoly(i) = getNpPoly(S.subtractmask); %Generate polygon representation (graphics object)
+        S.bw = imresize(S.bw,size(handles.stack,[1,2])); %Resize if necessary
+        if isfield(S,'subtractmask')
+            S.subtractmask = imresize(S.subtractmask,size(handles.stack,[1,2])); %Resize if necessary
+            if handles.checkbox_loadNeuropilData.Value
+                handles.neuropilf{i} = S.neuropilf;         %Get saved neuropil data
+                handles.npPoly(i) = getNpPoly(S.subtractmask); %Generate polygon representation (graphics object)
+            end
         end
+        
         handles.cellMasksAll(:,:,i) = S.bw; %3D array of logical masks: nY x nX x nROIs
         bounds = bwboundaries(S.bw); %Generate polygon representation of each cell mask
         handles.roi{i} = [bounds{1}(:,2) bounds{1}(:,1)]; %ROI coordinates in xy
@@ -585,6 +603,37 @@ if strcmp(handles.figure1.SelectionType,'alt')
     
     guidata(hObject,handles);
     try refresh_Axis(1:4,handles); end %Try is used to avoid error in case user clicks before loading imaging data
+end
+
+% --- SCROLL-WHEEL FUNCTION (Executes on scroll wheel click while the figure is in focus)
+function figure1_WindowScrollWheelFcn(hObject, eventdata, handles)
+
+%If ROI selected and Pixel-correlation function active
+scrollClick = eventdata.VerticalScrollCount;
+if ~isempty(handles.curr_ROI)
+    %&& all(isfield(handles,["recalcCorr_active","selectCircle_active"])) ~isempty(handles.curr_ROI)
+    if handles.recalcCorr_active
+        thresh = str2double(get(handles.edit_XCorrLowerBound,'String'));
+        thresh = max([min([thresh+0.05*scrollClick, 1]),0]);
+        set(handles.edit_XCorrLowerBound,'String',num2str(thresh));
+        pushbutton_recalcCorr_Callback(handles.pushbutton_recalcCorr, eventdata, handles)
+        %uicontrol(handles.pushbutton_recalcCorr); %Focus on button (clear edit cursor)
+
+    elseif handles.selectCircle_active
+        %Increment radius
+        r = str2double(get(handles.edit_circRadius,'String')) + scrollClick;
+        set(handles.edit_circRadius,'String',num2str(r));
+        %Determine the approx. circular logical mask
+        X = mean(handles.curr_ROI(:,1)); %XY coordinates of centroid of circular ROI
+        Y = mean(handles.curr_ROI(:,2));
+        [rr,cc] = meshgrid(1:size(handles.stack,1));
+        handles.cellMask = sqrt((rr-X).^2+(cc-Y).^2)<=r; %Get grids within circle radius
+        %Store cellF and patch vertices in memory
+        [handles.curr_ROI, handles.curr_cellf] = roiData(handles);
+        guidata(hObject, handles); %Save user data
+        refresh_Axis((1:3),handles); %Display patch and corresponding DFF
+
+    end
 end
 
 %--- SIZE CHANGED FUNCTION (executes when figure window is resized.)
@@ -1150,3 +1199,6 @@ end
 
 %--------------------------------------------------------------------------
 %--------------------------------------------------------------------------
+
+
+

@@ -9,7 +9,7 @@
 clearvars;
 
 %Params
-data_dir = 'X:\michael\network-batch\registered';
+data_dir = 'X:\michael\task-learning-vta\data';
 subject_ID = {'M413'}; %User enters subject name, or other string to use as filter for dirs to search
 segWidth = 80; %width of viewing box in pixels
 
