@@ -21,6 +21,7 @@ if any([C.combined_data, C.cellF, F.FOV_mean_projection])
         [~, paths] = iCorreFilePaths( dirs.data, expData(i).sub_dir, []);
         expData(i).raw_path = paths.raw;
         expData(i).reg_path = paths.registered;
+        disp(['Imaging source data: ' expData(i).reg_path]);
         
         %expData(i).mat_path = expData(idx).mat_path(:);
         %expData = get_imgPathnames(dirs,expData,i); %Get pathnames to raw, registered, and matfiles
