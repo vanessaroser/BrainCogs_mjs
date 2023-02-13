@@ -72,7 +72,7 @@ if calculate.combined_data
         end
         save(mat_file.img_beh(i),'-struct','stackInfo','-append');
     end
-    clearvars -except data_dir dirs expData calculate summarize figures mat_file params;
+    clearvars -except search_filter data_dir dirs expData calculate summarize figures mat_file params;
 end
 
 %% ANALYZE CELLULAR FLUORESCENCE
