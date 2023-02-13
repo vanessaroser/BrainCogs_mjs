@@ -11,6 +11,7 @@ colors = params.all.colors;
 %Specify struct 'ax' containing variables and plotting params for each figure panel:
 
 i=1;
+
 ax(i).title         = "Choice";
 ax(i).comparison    = "cueRegion";
 ax(i).trigger       = "cueRegion";
@@ -19,8 +20,28 @@ ax(i).window        = [-50, 90];
 ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
-
 i=i+1;
+
+ax(i).title         = "Prior Choice-correct-";
+ax(i).comparison    = "cueRegion";
+ax(i).trigger       = "cueRegion";
+ax(i).trialType     = ["correct_priorLeft", "correct_priorRight"];
+ax(i).window        = [-50, 90];
+ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
+ax(i).lineStyle     = {'-','-'};
+ax(i).xLabel        = 'Distance (cm)';  % XLabel
+i=i+1;
+
+ax(i).title         = "Prior Choice";
+ax(i).comparison    = "cueRegion";
+ax(i).trigger       = "cueRegion";
+ax(i).trialType     = ["priorLeft", "priorRight"];
+ax(i).window        = [-50, 90];
+ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
+ax(i).lineStyle     = {'-','-'};
+ax(i).xLabel        = 'Distance (cm)';  % XLabel
+i=i+1;
+
 ax(i).title         = "Cue Side";
 ax(i).comparison    = "cueRegion";
 ax(i).trigger       = "cueRegion";
@@ -29,8 +50,8 @@ ax(i).window        = [-50, 90];
 ax(i).color         = {colors.left2,colors.right2}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
-
 i=i+1;
+
 ax(i).title         = 'Rewarded';
 ax(i).comparison    = "cueRegion";
 ax(i).trigger       = "cueRegion";
@@ -39,8 +60,8 @@ ax(i).window        = [-50, 90];
 ax(i).color         = {colors.correct, colors.err}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
-
 i=i+1;
+
 ax(i).title         = "Forward Trials";
 ax(i).comparison    = "Position";
 ax(i).trigger       = "cueRegion";
@@ -49,8 +70,8 @@ ax(i).window        = [-50, 90];
 ax(i).color         = {colors.data}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
-
 i=i+1;
+
 ax(i).title         = "Choice";
 ax(i).comparison    = "Choice_turnEntry";
 ax(i).trigger       = "turnEntry";
@@ -59,8 +80,8 @@ ax(i).window        = [-2, 5];
 ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Time from turn entry (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title         = "Forward Trials";
 ax(i).comparison    = "Time_cueEntry";
 ax(i).trigger       = "cueEntry";
@@ -69,8 +90,8 @@ ax(i).window        = [-2, 2];
 ax(i).color         = {colors.data}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-'};
 ax(i).xLabel        = 'Time from cue entry (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title         = 'Rewarded';
 ax(i).comparison    = "Prior outcome";
 ax(i).trigger       = "outcome";
@@ -79,8 +100,8 @@ ax(i).window        = [-3, 7];
 ax(i).color         = {colors.correct,colors.correct2}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle     = {'-',':'};
 ax(i).xLabel        = 'Time from outcome (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title         = 'Unrewarded';
 ax(i).comparison    = "Prior outcome";
 ax(i).trigger       = "outcome";
@@ -89,8 +110,8 @@ ax(i).window        = [-3, 7];
 ax(i).color         = {colors.err,colors.err2}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle     = {'-',':'};
 ax(i).xLabel        = 'Time from outcome (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title      = 'First Cue';
 ax(i).comparison   = 'First Cue';
 ax(i).trigger   = "firstCue";
@@ -99,8 +120,8 @@ ax(i).window    = [-3, 5];
 ax(i).color      = {colors.left,colors.right}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle  = {'-','-'};
 ax(i).xLabel = 'Time from first cue (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title      = 'First Cue';
 ax(i).comparison    = 'First Cue';
 ax(i).trigger   = "firstCue";
@@ -109,8 +130,8 @@ ax(i).window    = [-2, 2];
 ax(i).color      = {colors.left,colors.right}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle  = {'-','-'};
 ax(i).xLabel = 'Time from first cue (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title      = 'Last Cue';
 ax(i).comparison    = "Last Cue";
 ax(i).trigger   = "lastCue";
@@ -119,8 +140,8 @@ ax(i).window    = [-2, 2];
 ax(i).color      = {colors.left,colors.right}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle  = {'-','-'};
 ax(i).xLabel = 'Time from last cue (s)';  % XLabel
-
 i=i+1;
+
 ax(i).title      = 'Last Cue';
 ax(i).comparison    = "Last Cue";
 ax(i).trigger   = "lastCue";
@@ -129,12 +150,22 @@ ax(i).window    = [-2, 2];
 ax(i).color      = {colors.left,colors.right}; %Outcome: hit/priorHit vs err/priorHit
 ax(i).lineStyle  = {'-','-'};
 ax(i).xLabel = 'Time from last cue (s)';  % XLabel
+i=i+1;
+
+ax(i).title         = "Cue Responses";
+ax(i).comparison    = "Cue onset";
+ax(i).trigger       = "cues";
+ax(i).trialType     = ["leftCue_correct", "rightCue_correct"];
+ax(i).window        = [-2, 2];
+ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
+ax(i).lineStyle     = {'-','-'};
+ax(i).xLabel        = 'Time from cue onset (s)';  % XLabel
 
 i=i+1;
 ax(i).title         = "Cue Responses";
 ax(i).comparison    = "Cue onset";
 ax(i).trigger       = "cues";
-ax(i).trialType     = ["leftCue", "rightCue"];
+ax(i).trialType     = ["leftCue_error", "rightCue_error"];
 ax(i).window        = [-2, 2];
 ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-','-'};
