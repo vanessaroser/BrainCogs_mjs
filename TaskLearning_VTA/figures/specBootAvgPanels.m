@@ -22,16 +22,6 @@ ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
 
-ax(i).title         = "Prior Choice-correct-";
-ax(i).comparison    = "cueRegion";
-ax(i).trigger       = "cueRegion";
-ax(i).trialType     = ["priorCorrect_priorLeft", "priorCorrect_priorRight"];
-ax(i).window        = [-50, 90];
-ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
-ax(i).lineStyle     = {'-','-'};
-ax(i).xLabel        = 'Distance (cm)';  % XLabel
-i=i+1;
-
 ax(i).title         = "Prior Choice";
 ax(i).comparison    = "cueRegion";
 ax(i).trigger       = "cueRegion";
@@ -47,7 +37,7 @@ ax(i).comparison    = "cueRegion";
 ax(i).trigger       = "cueRegion";
 ax(i).trialType     = ["leftCue", "rightCue"];
 ax(i).window        = [-50, 90];
-ax(i).color         = {colors.left2,colors.right2}; %Choice: left/hit/sound vs right/hit/sound
+ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
