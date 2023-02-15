@@ -9,8 +9,8 @@
 clearvars;
 
 %% User Must Set Params
-subject_ID = 'M413'; %User enters subject name, or other string to use as filter for dirs to search
-data_dir = 'X:\michael\task-learning-vta\data';
+subject_ID = 'M411'; %User enters subject name, or other string to use as filter for dirs to search
+data_dir = 'X:\michael\network-batch\rois\M411-fov2';
 segWidth = 100; %width of viewing box in pixels
 
 %% Locate ROI data and Time-Projections from all Sessions from Specified Subject

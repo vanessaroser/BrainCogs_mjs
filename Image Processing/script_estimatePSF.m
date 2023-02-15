@@ -341,14 +341,14 @@ exp(i).um_per_pixel = 51/256;
 exp(i).crop_margins = 40;
 i=i+1;
 
-data_dir = "Y:\michael\_technical\230203-leica-nogrinlens\bead1-920";
-dir_str = split(data_dir,filesep)';
-exp(i).dir = fullfile(dir_str{:});
-exp(i).sessionID = join(dir_str(end-1:end),'-');
-exp(i).depth = NaN; %Z-coordinate of bottom slice (um)
-exp(i).um_per_pixel = 62/256;
-exp(i).crop_margins = 40;
-i=i+1;
+% data_dir = "Y:\michael\_technical\230203-leica-nogrinlens\bead1-920"; %Excl. for calculating offsets
+% dir_str = split(data_dir,filesep)';
+% exp(i).dir = fullfile(dir_str{:});
+% exp(i).sessionID = join(dir_str(end-1:end),'-');
+% exp(i).depth = NaN; %Z-coordinate of bottom slice (um)
+% exp(i).um_per_pixel = 62/256;
+% exp(i).crop_margins = 40;
+% i=i+1;
 data_dir = "Y:\michael\_technical\230203-leica-nogrinlens\bead2-920";
 dir_str = split(data_dir,filesep)';
 exp(i).dir = fullfile(dir_str{:});
@@ -456,11 +456,13 @@ exp(i).crop_margins = 40;
 i=i+1;
 
 calc_psf = false;
+fig_summaryPSF = false;
+fig_summary = true;
 
 %% Loop through all datasets
 if calc_psf
     tic
-    for i = 1:35 %numel(exp)
+    for i = 1:numel(exp)
         %Estimate PSF
         [ psf, img ] =...
             estimatePSF( exp(i).dir, exp(i).crop_margins, 95, exp(i).um_per_pixel);
@@ -486,6 +488,7 @@ fields = ["bead1","bead2","bead3","nogrinlens","zeiss","leica","olympus"];
 for i=1:numel(fields)
     idx.(fields(i)) = sessionID(fields(i));
 end
+clear sessionID
 
 i=1;
 summary(i).title = 'zeiss-grintech-2p-lens-920nm';
@@ -514,21 +517,77 @@ summary(i).idx = idx.beam1 & idx.nogrinlens & idx.olympus; i=i+1;
 summary(i).title = 'olympus-nogrinlens-1064nm';
 summary(i).idx = idx.beam2 & idx.nogrinlens & idx.olympus; i=i+1;
 
-
-for i = 1:numel(summary)
-    idx = find(summary(i).idx);
-    for j = 1:numel(idx)
-        data_dir = fileparts(exp(idx(j)).dir);
-        data = load(fullfile(data_dir,exp(idx(j)).sessionID),'psf','depth'); %
-        data.psf.depth = data.depth;
-        psf(j) = data.psf;
+if fig_summaryPSF
+    for i = 1:numel(summary)
+        idx = find(summary(i).idx);
+        for j = 1:numel(idx)
+            data_dir = fileparts(exp(idx(j)).dir);
+            data = load(fullfile(data_dir,exp(idx(j)).sessionID),'psf','depth'); %
+            data.psf.depth = data.depth;
+            psf(j) = data.psf;
+        end
+        fig(i) = plotSummaryPSF( psf, summary(i).title );
+        clearvars psf
     end
-    fig(i) = plotSummaryPSF( psf, summary(i).title );
-    clearvars psf
+    save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 end
-save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 
+%Figure: Summary of PSF and Offsets
+%   Six swarms each for 920-nm, 1064-nm, Offsets
+titles = ["PSF-920-nm","PSF-1064-nm","PSF-Z-Offsets"];
+if fig_summary
+    for i = 1:numel(summary)
+        idx = find(summary(i).idx);
+        for j = 1:numel(idx)
+            data_dir = fileparts(exp(idx(j)).dir);
+            data(j) = load(fullfile(data_dir,exp(idx(j)).sessionID),'psf','sessionID');
+        end
+        %Find replicates from same bead and average
+        fields = ["x","y","z"];
+        fwhm(i) = struct("x",NaN(numel(idx),1),"y",NaN(numel(idx),1),"z",NaN(numel(idx),1));
+        loc{i} = NaN(numel(idx),1);
+        for j = 1:numel([data.sessionID]')
+            sessionID_str = split(data(j).sessionID,'-');
+            if any([data.sessionID]==join([sessionID_str',"2"],'-')) %Has duplicates
+                repIdx=[find([data.sessionID]==join([sessionID_str',"2"],'-')),j];
+                for k = 1:numel(fields)
+                    fwhm(i).(fields(k))(j) = ...
+                        mean([data(repIdx(1)).psf.(fields(k)).fwhm,...
+                        data(repIdx(2)).psf.(fields(k)).fwhm]);
 
+                end
+                loc{i}(j) = mean([data(repIdx(1)).psf.(fields(k)).loc,...
+                        data(repIdx(2)).psf.(fields(k)).loc]);
+            elseif any(sessionID_str=='2') %Duplicates
+                continue
+            else
+                for k = 1:numel(fields)
+                    fwhm(i).(fields(k))(j) = data(j).psf.(fields(k)).fwhm;
+                end
+                loc{i}(j) = data(j).psf.(fields(k)).loc;
+            end
+        end
+        %Remove NaNs
+        for k = 1:numel(fields)
+            fwhm(i).(fields(k)) = fwhm(i).(fields(k))(~isnan(fwhm(i).(fields(k))));
+        end
+        loc{i} = loc{i}(~isnan(loc{i}));
+        clearvars data
+    end
+
+    %Get Z-Offsets from PSF peaks
+    beam1Idx = find(contains({summary(:).title},'920nm'));
+    for i = 1:numel(beam1Idx)
+        sessionID = split(summary(beam1Idx(i)).title,'-');
+        sessionID = strjoin(sessionID(~ismember(sessionID,{'920nm'})),'-');
+        idx = [beam1Idx(i),find(ismember({summary(:).title},[sessionID,'-1064nm']))];
+        offset{i} = loc{idx(1)}-loc{idx(2)};
+        offsetID(i) = string(sessionID);
+        clear sessionID
+    end
+    figs = fig_summary_psf_offsets(fwhm, offset, string({summary(:).title}), offsetID, titles);
+    save_multiplePlots(figs,fullfile(fileparts(data_dir)));
+end
 %-------------------Older Measurements prior to Standardizing Technique-----------------------------
 
 % %221219 1P-lens
@@ -574,7 +633,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 64/512;
 % exp(i).crop_margins = [208,234,60];
 % i=i+1;
-% 
+%
 % %Y:\michael\_2p-stim\221222-2p-grin-lens\bead1-920
 % dir_str = ["Y:","michael","_technical","221222-2p-grin-lens","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -591,7 +650,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 64/512;
 % exp(i).crop_margins = [231,209,60];
 % i=i+1;
-% 
+%
 % %Y:\michael\_2p-stim\221223-2p-grin-lens\bead1-920
 % dir_str = ["Y:","michael","_technical","221223-2p-grin-lens","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -632,7 +691,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 37/512;
 % exp(i).crop_margins = [189,220,80];
 % i=i+1;
-% 
+%
 % %Y:\michael\_technical\230106-2p-beads-zstacks-920\bead1-920
 % dir_str = ["Y:","michael","_technical","230106-2p-beads-zstacks-920","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -641,7 +700,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 70/512;
 % exp(i).crop_margins = [214,260,120];
 % i=i+1;
-% 
+%
 % %Y:\michael\_technical\230109-2p-beads-920\bead1-920
 % dir_str = ["Y:","michael","_technical","230109-2p-beads-920","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -650,7 +709,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 70/512;
 % exp(i).crop_margins = [91,181,120];
 % i=i+1;
-% 
+%
 % %Y:\michael\_technical\230111-2p-beads\bead1-920
 % dir_str = ["Y:","michael","_technical","230111-2p-beads","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -667,7 +726,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 70/512;
 % exp(i).crop_margins = [226,217,80];
 % i=i+1;
-% 
+%
 % %Y:\michael\_technical\230112-2p-beads\bead1-920 %Same prep as 230111
 % dir_str = ["Y:","michael","_technical","230112-2p-beads","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -716,7 +775,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 70/512;
 % exp(i).crop_margins = [227,217,100];
 % i=i+1;
-% 
+%
 % %Y:\michael\_technical\230112-2p-beads-nogrinlens\bead1-920
 % dir_str = ["Y:","michael","_technical","230112-2p-beads-nogrinlens","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
@@ -733,7 +792,7 @@ save_multiplePlots(fig,fullfile(fileparts(data_dir)));
 % exp(i).um_per_pixel = 70/512;
 % exp(i).crop_margins = [229,230,80];
 % i=i+1;
-% 
+%
 % %Y:\michael\_technical\230113-2p-beads-nogrinlens\bead1-920
 % dir_str = ["Y:","michael","_technical","230113-2p-beads-nogrinlens","bead1-920"];
 % exp(i).dir = fullfile(dir_str{:});
