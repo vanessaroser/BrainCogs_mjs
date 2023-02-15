@@ -25,6 +25,33 @@ expData = struct('sub_dir',[],'subjectID',[],'mainMaze',[],...
 % Session metadata
 i=1;
 
+expData(i).sub_dir = '220307 M411 T6'; %Excl from Master ROIs
+expData(i).subjectID = "mjs20_411";
+expData(i).mainMaze = 6;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
+expData(i).sub_dir = '220323 M411 T6 pseudorandom'; %Excl from Master ROIs
+expData(i).subjectID = "mjs20_411";
+expData(i).mainMaze = 6;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
+expData(i).sub_dir = '220325 M411 T7'; %Excl from Master ROIs
+expData(i).subjectID = "mjs20_411";
+expData(i).mainMaze = 7;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
+expData(i).sub_dir = '220613 M411 T7'; %Excl from Master ROIs
+expData(i).subjectID = "mjs20_411";
+expData(i).mainMaze = 7;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
+expData(i).sub_dir = '220615 M411 T7'; %Excl from Master ROIs
+expData(i).subjectID = "mjs20_411";
+expData(i).mainMaze = 7;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
+
+%---------------
 expData(i).sub_dir = '220309 M413 T6 pseudorandom';
 expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 6;
