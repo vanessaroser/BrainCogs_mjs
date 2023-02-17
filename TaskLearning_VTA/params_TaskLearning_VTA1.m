@@ -74,7 +74,7 @@ params.align.binWidth       = 5; %Spatial bins in cm
 % Trial averaging
 params.bootAvg.timeWindow       = params.align.timeWindow; %Also used for bootavg, etc.
 params.bootAvg.positionWindow   = params.align.positionWindow; %Also used for bootavg, etc.
-params.bootAvg.dsFactor         = 3; %Downsample from interpolated rate of 1/params.interdt
+params.bootAvg.dsFactor         = 1; %Downsample from interpolated rate of 1/params.interdt
 params.bootAvg.nReps            = 1000; %Number of bootstrap replicates
 params.bootAvg.CI               = 90; %Confidence interval as decimal
 params.bootAvg.subtractBaseline = false;

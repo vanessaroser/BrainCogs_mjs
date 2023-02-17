@@ -12,8 +12,9 @@ colors = params.all.colors;
 
 i=1;
 
+%Summary Figure for Cue Region of Maze
 ax(i).title         = "Choice";
-ax(i).comparison    = "cueRegion";
+ax(i).comparison    = "cue-region";
 ax(i).trigger       = "cueRegion";
 ax(i).trialType     = ["left", "right"];
 ax(i).window        = [-50, 90];
@@ -21,9 +22,8 @@ ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs rig
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
-
 ax(i).title         = "Prior Choice";
-ax(i).comparison    = "cueRegion";
+ax(i).comparison    = "cue-region";
 ax(i).trigger       = "cueRegion";
 ax(i).trialType     = ["priorLeft", "priorRight"];
 ax(i).window        = [-50, 90];
@@ -31,9 +31,8 @@ ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs rig
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
-
 ax(i).title         = "Cue Side";
-ax(i).comparison    = "cueRegion";
+ax(i).comparison    = "cue-region";
 ax(i).trigger       = "cueRegion";
 ax(i).trialType     = ["leftCue", "rightCue"];
 ax(i).window        = [-50, 90];
@@ -41,9 +40,8 @@ ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs rig
 ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
-
-ax(i).title         = 'Rewarded';
-ax(i).comparison    = "cueRegion";
+ax(i).title         = 'Reward History';
+ax(i).comparison    = "cue-region";
 ax(i).trigger       = "cueRegion";
 ax(i).trialType     = ["correct_priorCorrect", "correct_priorError"];
 ax(i).window        = [-50, 90];
@@ -52,7 +50,7 @@ ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
 
-ax(i).title         = "Forward Trials";
+ax(i).title         = "Position";
 ax(i).comparison    = "Position";
 ax(i).trigger       = "cueRegion";
 ax(i).trialType     = ["forward"];
@@ -63,7 +61,7 @@ ax(i).xLabel        = 'Distance (cm)';  % XLabel
 i=i+1;
 
 ax(i).title         = "Choice";
-ax(i).comparison    = "Choice_turnEntry";
+ax(i).comparison    = "choice-turn";
 ax(i).trigger       = "turnEntry";
 ax(i).trialType     = ["left_correct", "right_correct"];
 ax(i).window        = [-2, 5];
@@ -72,8 +70,8 @@ ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Time from turn entry (s)';  % XLabel
 i=i+1;
 
-ax(i).title         = "Forward Trials";
-ax(i).comparison    = "Time_cueEntry";
+ax(i).title         = "Time";
+ax(i).comparison    = "time";
 ax(i).trigger       = "cueEntry";
 ax(i).trialType     = ["forward"];
 ax(i).window        = [-2, 2];
