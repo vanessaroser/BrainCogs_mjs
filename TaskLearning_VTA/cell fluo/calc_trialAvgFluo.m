@@ -3,6 +3,7 @@ function bootAvg = calc_trialAvgFluo( trial_dFF, trials, params )
 % Unpack variables from structures
 trialSpec = params.trialSpec;
 trigger = params.trigger;
+subtractBaseline = params.subtractBaseline;
 time = trial_dFF.t;
 trial_dff = trial_dFF.(params.trigger); %Fix cue,turn,arm entry event code...
 

@@ -52,18 +52,21 @@ expData(i).npCorrFactor = 0.3;
 i = i+1;
 
 %---------------
+expData(i).sub_dir = '220301 M413 T6';
+expData(i).subjectID = "mjs20_413";
+expData(i).mainMaze = 6;
+expData(i).npCorrFactor = 0.3;
+i = i+1;
 expData(i).sub_dir = '220309 M413 T6 pseudorandom';
 expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 6;
 expData(i).npCorrFactor = 0.3;
 i = i+1;
-
 expData(i).sub_dir = '220311 M413 T7';
 expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 7;
 expData(i).npCorrFactor = 0.3;
 i = i+1;
-
 expData(i).sub_dir = '220317 M413 T7';
 expData(i).subjectID = "mjs20_413";
 expData(i).mainMaze = 7;

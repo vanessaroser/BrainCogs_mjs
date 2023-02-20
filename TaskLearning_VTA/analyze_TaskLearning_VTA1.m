@@ -121,7 +121,7 @@ if calculate.fluorescence
         % Event-related cellular fluorescence
         if calculate.trial_average_dFF %Trial averaged dF/F with bootstrapped CI
             load(mat_file.img_beh(i),'trialDFF','trials','cellID');
-            for j = 1:numel(params.bootAvg)
+            for j = 1:numel(params.bootAvg) %For each trigger event
                 bootAvg.(params.bootAvg(j).trigger) = calc_trialAvgFluo(trialDFF, trials, params.bootAvg(j));
             end
             if ~exist(mat_file.results(i),'file')
