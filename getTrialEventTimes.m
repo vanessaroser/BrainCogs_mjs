@@ -43,12 +43,14 @@ for i = 1:numel(trials)
         %Get iteration assoc with cue onset as time index
         cueTimes = sort(eventTimes(i).start... %Use eventTimes.start (corrected) rather than raw 'start' times
             + trials(i).time([trials(i).cueOnset{:}]))'; %trials(i).cueOnset sometimes = 0 (??)
-        eventTimes(i).cues      = cueTimes;
-        eventTimes(i).firstCue  = cueTimes(1);
-        eventTimes(i).lastCue   = cueTimes(end);
         %     eventTimes(i).leftCues = cueTimes(logical(trials(i).cueCombo(1,:)));
         %     eventTimes(i).rightCues = cueTimes(logical(trials(i).cueCombo(2,:)));
+    else
+        cueTimes = eventTimes(i).start + trials(i).time(trials(i).iCueEntry); %Use cueEntry as dummy event for alignment
     end
+    eventTimes(i).cues      = cueTimes;
+    eventTimes(i).firstCue  = cueTimes(1);
+    eventTimes(i).lastCue   = cueTimes(end);
 
     %Outcome onset times
     eventTimes(i).outcome =  eventTimes(i).start + trials(i).time(trials(i).iterations); %Use eventTimes.start (corrected) rather than raw 'start' times
