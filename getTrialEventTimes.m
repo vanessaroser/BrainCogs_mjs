@@ -39,7 +39,7 @@ for i = 1:numel(trials)
      
     %Cue onset times
     %Note: trials(i).cueCombo sorted in ViRMEn but not cuePos or cueOnset!
-    if sum([trials(i).cueOnset{:}])>0
+    if all([trials(i).cueOnset{:}]>1) %If cues appear during run (rather than at start or not at all)
         %Get iteration assoc with cue onset as time index
         cueTimes = sort(eventTimes(i).start... %Use eventTimes.start (corrected) rather than raw 'start' times
             + trials(i).time([trials(i).cueOnset{:}]))'; %trials(i).cueOnset sometimes = 0 (??)
