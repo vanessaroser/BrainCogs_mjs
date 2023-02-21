@@ -45,6 +45,7 @@ for i = 1:numel(trial_dff)
         else
             subset_label = trialSpec{k};
         end
+        disp(subset_label);
         trialMask = getMask(trials,trialSpec{k}); %Logical mask for specified combination of trials
         dff = trial_dff{i}(trialMask,:); %Get subset of trials specified by trialMask
         
