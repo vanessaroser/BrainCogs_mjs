@@ -46,7 +46,7 @@ for i = 1:numel(trials)
         %     eventTimes(i).leftCues = cueTimes(logical(trials(i).cueCombo(1,:)));
         %     eventTimes(i).rightCues = cueTimes(logical(trials(i).cueCombo(2,:)));
     else
-        cueTimes = eventTimes(i).start + trials(i).time(trials(i).iCueEntry); %Use cueEntry as dummy event for alignment
+        cueTimes = NaN;
     end
     eventTimes(i).cues      = cueTimes;
     eventTimes(i).firstCue  = cueTimes(1);
