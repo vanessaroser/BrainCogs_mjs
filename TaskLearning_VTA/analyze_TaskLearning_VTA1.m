@@ -122,7 +122,11 @@ if calculate.fluorescence
         if calculate.trial_average_dFF %Trial averaged dF/F with bootstrapped CI
             load(mat_file.img_beh(i),'trialDFF','trials','cellID');
             for j = 1:numel(params.bootAvg) %For each trigger event
-                bootAvg.(params.bootAvg(j).trigger) = calc_trialAvgFluo(trialDFF, trials, params.bootAvg(j));
+                if ~exist('bootAvg') || ~isfield(bootAvg, params.bootAvg(j).trigger)
+                    bootAvg.(params.bootAvg(j).trigger) = struct();
+                end
+                bootAvg.(params.bootAvg(j).trigger) = calc_trialAvgFluo(trialDFF, trials,...
+                    params.bootAvg(j), bootAvg.(params.bootAvg(j).trigger)); %Include var bootAvg if multiple params.bootAvg use the same trigger (eg, w/o baseline subtraction)
             end
             if ~exist(mat_file.results(i),'file')
                 save(mat_file.results(i),'bootAvg','cellID'); %Save

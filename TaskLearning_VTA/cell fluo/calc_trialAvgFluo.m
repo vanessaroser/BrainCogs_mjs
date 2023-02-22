@@ -1,4 +1,4 @@
-function bootAvg = calc_trialAvgFluo( trial_dFF, trials, params )
+function bootAvg = calc_trialAvgFluo( trial_dFF, trials, params, bootAvg )
 
 % Unpack variables from structures
 trialSpec = params.trialSpec;
