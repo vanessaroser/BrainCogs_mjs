@@ -38,13 +38,13 @@ for i = 1:numel(trials)
     eventTimes(i).start = getTrialIterationTime(log, blockIdx, i, 1); %Time of first iteration; needs correction in some cases because the reference time for trials(i).start changes after restarts, etc. 
      
     %Cue onset times
-    %Note: trials(i).cueCombo sorted in ViRMEn but not cuePos or cueOnset!
     if all([trials(i).cueOnset{:}]>1) %If cues appear during run (rather than at start or not at all)
         %Get iteration assoc with cue onset as time index
         cueTimes = sort(eventTimes(i).start... %Use eventTimes.start (corrected) rather than raw 'start' times
             + trials(i).time([trials(i).cueOnset{:}]))'; %trials(i).cueOnset sometimes = 0 (??)
         %     eventTimes(i).leftCues = cueTimes(logical(trials(i).cueCombo(1,:)));
         %     eventTimes(i).rightCues = cueTimes(logical(trials(i).cueCombo(2,:)));
+        %Note: trials(i).cueCombo sorted in ViRMEn but not cuePos or cueOnset!
     else
         cueTimes = NaN;
     end
