@@ -14,7 +14,8 @@ clearvars colors
 
 % %Define color codes for cell types, etc.
 choiceColors = {'left',cbrew.red,'left2',cbrew.red2,'right',cbrew.blue,'right2',cbrew.blue2}; 
-ruleColors = {'sensory',cbrew.black,'sensory2',cbrew.gray,'alternation',cbrew.purple,'alternation2',cbrew.purple2}; 
+ruleColors = {'sensory',cbrew.black,'sensory2',cbrew.gray,'alternation',cbrew.purple,'alternation2',cbrew.purple2,...
+    'congruent',cbrew.black,'conflict',cbrew.red}; 
 outcomeColors = {'correct',cbrew.green,'correct2',cbrew.green2,'err',cbrew.pink,'err2',cbrew.pink2,...
     'pErr',cbrew.pink,'pErr2',cbrew.pink2,'oErr',cbrew.pink,'oErr2',cbrew.pink2,...
     'miss',cbrew.gray,'miss2',cbrew.gray2};

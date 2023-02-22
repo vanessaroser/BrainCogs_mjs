@@ -33,6 +33,14 @@ for i = 1:numel(cellIdx)
     idx = cellIdx(i); %Index in 'cells' structure for cell with corresponding cell ID
     disp(['Plotting trial-averaged dF/F for cell ' num2str(i) '/' num2str(numel(cellIdx)) '...']);
     for j = 1:numel(panels)
+
+        %Time/position axis  
+        fields = ["t","position"];
+        fIndex = [isfield(bootAvg,'t'), isfield(bootAvg,'position')]; %If/elseif logic
+        wIndex = bootAvg.(fields(fIndex)) >= panels(j).window(1) &...
+            bootAvg.(fields(fIndex)) <= panels(j).window(2); %Domain from specBootAvgPanels()
+        panels(j).x = bootAvg.(fields(fIndex))(wIndex);
+
         for k = 1:numel(panels(j).trialType)
 
             trialSpec = panels(j).trialType(k); %Trial specifier, eg {'left','hit','sound'}
@@ -49,14 +57,8 @@ for i = 1:numel(cellIdx)
             end
 
             %Signal and confidence bounds
-            panels(j).signal{k} = bootAvg.(trialSpec).cells(idx).signal;
-            panels(j).CI{k} = bootAvg.(trialSpec).cells(idx).CI;
-        end
-        %Time/position axis
-        if isfield(bootAvg,'t')
-            panels(j).x = bootAvg.t;
-        else
-            panels(j).x = bootAvg.position;
+            panels(j).signal{k} = bootAvg.(trialSpec).cells(idx).signal(wIndex);
+            panels(j).CI{k} = bootAvg.(trialSpec).cells(idx).CI(:,wIndex);
         end
 
         %Labels

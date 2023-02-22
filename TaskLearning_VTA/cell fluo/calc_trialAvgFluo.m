@@ -62,6 +62,7 @@ for i = 1:numel(trial_dff)
                 baseline = mean(dff(:,bootAvg.position<=0),2,"omitnan");
             end
             dff = dff - baseline;
+            %subset_label = join([subset_label,"baselineSubtracted"],'_');
         end
         
         dff = dff(~isnan(sum(dff,2)),:); %if iscell(dff{1} &&...) || ...
