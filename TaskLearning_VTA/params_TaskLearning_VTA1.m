@@ -4,7 +4,7 @@ function [ calculate, summarize, figures, mat_file, params ] = params_TaskLearni
 calculate.combined_data             = false;  %Combine relevant behavioral and imaging data in one MAT file ; truncate if necessary
 calculate.cellF                     = false; %Extract cellf and neuropilf from ROIs, excluding overlapping regions and extremes of the FOV
 calculate.dFF                       = false; %Calculate dF/F, with optional neuropil subtraction
-calculate.align_signals             = false; %Interpolate dF/F and align to behavioral events
+calculate.align_signals             = true; %Interpolate dF/F and align to behavioral events
 calculate.trial_average_dFF         = true; %dF/F averaged over specified subsets of trials
 calculate.encoding_model            = false; %Encoding model
 
@@ -17,7 +17,7 @@ if any([calculate.cellF, calculate.dFF,...
 end
 
 %% SUMMARIZE RESULTS
-summarize.trialDFF              = false;
+summarize.trialDFF              = true;
 summarize.imaging               = false;
 summarize.selectivity           = false;
 
@@ -39,7 +39,8 @@ figures.time_average_dFF                = false;  %Overlay traces for distinct c
 figures.heatmap_modulation_idx          = false;  %Heatmap of selectivity idxs for COR for each session
 % Summary
 figures.summary_behavior                = false;    %Summary of descriptive stats, eg, nTrials and {trials2crit, pErr, oErr} for each rule
-figures.summary_selectivity_heatmap     = false;     %Heatmap of time-locked 
+figures.summary_selectivity_heatmap     = false;     %Heatmap of time-locked
+figures.summary_selectivity_histogram   = false;     %Heatmap of time-locked 
 figures.summary_modulation				= false;    %Box/line plots of grouped selectivity results for comparison
 
 % Validation

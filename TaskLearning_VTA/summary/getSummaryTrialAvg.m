@@ -20,29 +20,40 @@ for i = 1:numel(bootStruct)
             trialAvg.(triggers(j)).(trialSpec(k))(cellIdx(1,i):cellIdx(2,i),:) = vertcat(bootStruct(i).bootAvg.(triggers(j)).(trialSpec(k)).cells(:).signal);
         end
     end
-    trialAvg.expID(cellIdx(1,i):cellIdx(2,i)) = i;
+    trialAvg.subject(cellIdx(1,i):cellIdx(2,i)) = bootStruct(i).subject;
+    trialAvg.expIdx(cellIdx(1,i):cellIdx(2,i)) = i;
     trialAvg.cellID(cellIdx(1,i):cellIdx(2,i)) = bootStruct(i).cellID;
+    expID(cellIdx(1,i):cellIdx(2,i)) = string(bootStruct(i).session); 
 end
 
 %Take difference over sum for each comparison
+selFunc = @(trialAvg1, trialAvg2) (trialAvg2-trialAvg1) ./ (abs(trialAvg2 + trialAvg1)); %abs() to prevent reversal of preference for negative values
 for i = 1:numel(params)
-    trigger = params(i).trigger;
+    %Domain: time or position
+    selectivity.(params(i).comparison).domain = trialAvg.(params(i).trigger).(domain);
+    domain = trialAvg.(params(i).trigger).domain;
+    wIndex = selectivity.(params(i).comparison).domain > 0; %All values for x>0
 
     if numel(params(i).trialSpec)==1
         selMat = zscore(trialAvg.(params(i).trigger).(params(i).trialSpec(1)),1,2);
-        %         selectivity.(params(i).comparison) = trialAvg.(params(i).trigger).(params(i).trialSpec(1));
     else
+        %Signed Selectivity (preference) as a function of time
         trialType1 = trialAvg.(params(i).trigger).(params(i).trialSpec(1));
         trialType2 = trialAvg.(params(i).trigger).(params(i).trialSpec(2));
-        %     selectivity.(params(i).comparison) = ...
-        %         (trialType2-trialType1)./(trialType2+trialType1);
-        selMat = (trialType2-trialType1) ./ (abs(trialType2)+abs(trialType1)); %Difference over absolute sum
+        selMat = selFunc(trialType1,trialType2); %Difference over absolute sum
+        
+        %Preference averaged across x>0 
+        winMat = selFunc(mean(trialType1(:,wIndex),2), mean(trialType2(:,wIndex),2)); %Difference over absolute sum
     end
     selectivity.(params(i).comparison).values = selMat;
     
-    %Append Domain: time or position
-    domain = trialAvg.(params(i).trigger).domain;
-    selectivity.(params(i).comparison).domain = trialAvg.(params(i).trigger).(domain);
+    %Scalar value for entire window following trigger
+    selectivity.(params(i).comparison).meanPreference = winMat; %Nprm. difference between grand mean traces
+    selectivity.(params(i).comparison).meanSelectivity = abs(winMat); %Norm. absolute difference between grand mean traces 
+
 end
+selectivity.subject = trialAvg.subject;
+selectivity.session = expID;
+selectivity.cellID = trialAvg.cellID;
 
 

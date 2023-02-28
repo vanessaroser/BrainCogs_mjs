@@ -128,9 +128,13 @@ if calculate.fluorescence
                 bootAvg.(params.bootAvg(j).trigger) = calc_trialAvgFluo(trialDFF, trials,...
                     params.bootAvg(j), bootAvg.(params.bootAvg(j).trigger)); %Include var bootAvg if multiple params.bootAvg use the same trigger (eg, w/o baseline subtraction)
             end
+
+            %Save results
+            session = expData(i).sub_dir; %Before running fresh, Stick these lines in <<if ~exist... >>
+            subject = expData(i).subjectID;
             if ~exist(mat_file.results(i),'file')
-                save(mat_file.results(i),'bootAvg','cellID'); %Save
-            else, save(mat_file.results(i),'bootAvg','cellID','-append');
+                save(mat_file.results(i),'subject','session','cellID','bootAvg'); %Save
+            else, save(mat_file.results(i),'subject','session','cellID','bootAvg','-append');
             end
             clearvars trialDFF trials cellID bootAvg
         end
@@ -154,16 +158,21 @@ end
 %% SUMMARY
 
 if summarize.trialDFF
-    results.sensory = arrayfun(@(idx) mat_file.results(idx),...
-        find([expData.mainMaze]==6),"UniformOutput",false)';
-    results.alternation = arrayfun(@(idx) mat_file.results(idx),...
-        find([expData.mainMaze]==7),"UniformOutput",false)';
+    idx.sensory = find([expData.mainMaze]==6);
+    idx.alternation = find([expData.mainMaze]==7);
     for rule = ["sensory","alternation"]
-        for i = 1:numel(results.(rule))
-            S(i) = load(results.(rule){i},'bootAvg','cellID'); %Mean traces from each session
+        for i = 1:numel(idx.(rule))
+            S(i) = load(mat_file.results(idx.(rule)(i)),'subject','session','bootAvg','cellID'); %Mean traces from each session
         end
+        %Temp--Later update results files to include subjectID & sessionID
+        for i = 1:numel(idx.(rule)) 
+            S(i).subject = expData(idx.(rule)(i)).subjectID; 
+            S(i).session = expData(idx.(rule)(i)).sub_dir; 
+        end
+        
         [trialAvg.(rule), selectivity.(rule)] = getSummaryTrialAvg(S, params.summary.trialAvg);
         save(mat_file.summary.selectivity,'-struct','selectivity');
+        clearvars S;
     end
 end
 
