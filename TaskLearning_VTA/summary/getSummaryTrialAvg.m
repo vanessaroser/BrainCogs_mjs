@@ -17,7 +17,8 @@ for i = 1:numel(bootStruct)
                 trialAvg.(triggers(j)).(trialSpec(k)) = NaN(sum(nCells),nBins);
                 trialAvg.(triggers(j)).domain = domain;
             end
-            trialAvg.(triggers(j)).(trialSpec(k))(cellIdx(1,i):cellIdx(2,i),:) = vertcat(bootStruct(i).bootAvg.(triggers(j)).(trialSpec(k)).cells(:).signal);
+            trialAvg.(triggers(j)).(trialSpec(k))(cellIdx(1,i):cellIdx(2,i),:) =...
+                vertcat(bootStruct(i).bootAvg.(triggers(j)).(trialSpec(k)).cells(:).signal);
         end
     end
     trialAvg.subject(cellIdx(1,i):cellIdx(2,i)) = bootStruct(i).subject;

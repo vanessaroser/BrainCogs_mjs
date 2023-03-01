@@ -171,7 +171,8 @@ if summarize.trialDFF
         end
         
         [trialAvg.(rule), selectivity.(rule)] = getSummaryTrialAvg(S, params.summary.trialAvg);
-        save(mat_file.summary.selectivity,'-struct','trialAvg','selectivity');
+        save(mat_file.summary.trialAvgDFF,'-struct','trialAvg');
+        save(mat_file.summary.selectivity,'-struct','selectivity');
         clearvars S;
     end
 end

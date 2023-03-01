@@ -55,6 +55,7 @@ mat_file.results        = @(idx) fullfile(dirs.results,expData(idx).sub_dir,'res
 %Aggregated
 mat_file.summary.behavior       = fullfile(dirs.summary,'behavior.mat');
 mat_file.summary.imaging        = fullfile(dirs.summary,'imaging.mat');
+mat_file.summary.trialAvgDFF    = fullfile(dirs.summary,'trialAvgDFF.mat');
 mat_file.summary.selectivity    = fullfile(dirs.summary,'selectivity.mat');
 mat_file.stats                  = fullfile(dirs.summary,'summary_stats.mat');
 mat_file.validation             = fullfile(dirs.summary,'validation.mat');
