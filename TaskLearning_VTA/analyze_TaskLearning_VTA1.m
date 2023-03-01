@@ -162,16 +162,16 @@ if summarize.trialDFF
     idx.alternation = find([expData.mainMaze]==7);
     for rule = ["sensory","alternation"]
         for i = 1:numel(idx.(rule))
-            S(i) = load(mat_file.results(idx.(rule)(i)),'subject','session','bootAvg','cellID'); %Mean traces from each session
+            S(i) = load(mat_file.results(idx.(rule)(i)),'bootAvg','cellID'); %Mean traces from each session %'subject','session',
         end
         %Temp--Later update results files to include subjectID & sessionID
         for i = 1:numel(idx.(rule)) 
-            S(i).subject = expData(idx.(rule)(i)).subjectID; 
+            S(i).subject = expData(idx.(rule)(i)).subjectID;  
             S(i).session = expData(idx.(rule)(i)).sub_dir; 
         end
         
         [trialAvg.(rule), selectivity.(rule)] = getSummaryTrialAvg(S, params.summary.trialAvg);
-        save(mat_file.summary.selectivity,'-struct','selectivity');
+        save(mat_file.summary.selectivity,'-struct','trialAvg','selectivity');
         clearvars S;
     end
 end

@@ -27,30 +27,34 @@ for i = 1:numel(bootStruct)
 end
 
 %Take difference over sum for each comparison
-selFunc = @(trialAvg1, trialAvg2) (trialAvg2-trialAvg1) ./ (abs(trialAvg2 + trialAvg1)); %abs() to prevent reversal of preference for negative values
+Norm = @(trialAvg1, trialAvg2) abs(trialAvg1 + trialAvg2);
+Preference = @(trialAvg1, trialAvg2) (trialAvg2-trialAvg1) ./ Norm(trialAvg1,trialAvg2); %abs() to prevent reversal of preference for negative values
+Selectivity  = @(trialAvg1, trialAvg2) abs(Preference(trialAvg1, trialAvg2));
+
 for i = 1:numel(params)
     %Domain: time or position
-    selectivity.(params(i).comparison).domain = trialAvg.(params(i).trigger).(domain);
-    domain = trialAvg.(params(i).trigger).domain;
-    wIndex = selectivity.(params(i).comparison).domain > 0; %All values for x>0
+    X = trialAvg.(params(i).trigger).(domain);
+    idx = X>=params(i).window(1) & X<=params(i).window(2);
+    selectivity.(params(i).comparison).domain = X(idx);
+    %Window for within-trial averaging
+    wIndex = X>=params(i).avgWindow(1) & X<=params(i).avgWindow(2); %eg, all values for 0<x<(length_of_cue_region)
 
-    if numel(params(i).trialSpec)==1
-        selMat = zscore(trialAvg.(params(i).trigger).(params(i).trialSpec(1)),1,2);
+    if numel(params(i).trialSpec)==1 %eg, for position
+        selectivity.(params(i).comparison).zscore = zscore(trialAvg.(params(i).trigger).(params(i).trialSpec(1)),1,2);
     else
-        %Signed Selectivity (preference) as a function of time
+        %Selectivity and Preference as a function of time
         trialType1 = trialAvg.(params(i).trigger).(params(i).trialSpec(1));
         trialType2 = trialAvg.(params(i).trigger).(params(i).trialSpec(2));
-        selMat = selFunc(trialType1,trialType2); %Difference over absolute sum
         
-        %Preference averaged across x>0 
-        winMat = selFunc(mean(trialType1(:,wIndex),2), mean(trialType2(:,wIndex),2)); %Difference over absolute sum
+        selectivity.(params(i).comparison).values = Preference(trialType1, trialType2); %Preference over time or space
+        selectivity.(params(i).comparison).magnitude = Selectivity(trialType1, trialType2); %Selectivity over time or space
+        
+        %Scalar Selectivity averaged across window, eg 0--90 cm in cue region 
+        selectivity.(params(i).comparison).meanPreference = ...
+            Preference(mean(trialType1(:,wIndex),2), mean(trialType2(:,wIndex),2)); %Norm. difference between grand mean traces
+        selectivity.(params(i).comparison).meanSelectivity = ...
+            Selectivity(mean(trialType1(:,wIndex),2), mean(trialType2(:,wIndex),2)); %Norm. absolute difference between grand mean traces 
     end
-    selectivity.(params(i).comparison).values = selMat;
-    
-    %Scalar value for entire window following trigger
-    selectivity.(params(i).comparison).meanPreference = winMat; %Nprm. difference between grand mean traces
-    selectivity.(params(i).comparison).meanSelectivity = abs(winMat); %Norm. absolute difference between grand mean traces 
-
 end
 selectivity.subject = trialAvg.subject;
 selectivity.session = expID;

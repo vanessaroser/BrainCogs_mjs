@@ -122,8 +122,13 @@ if figures.summary_selectivity_histogram
     %Load data
     S = load(mat_file.summary.selectivity);
     for rule = ["sensory","alternation"]
-        figs = histogram_summarySelectivity(S.(rule), join(["selectivity-histogram-" rule],''), params.summary.trialAvg);
+        for field = ["meanSelectivity","meanPreference"]
+        figs = histogram_summaryPreference(S.(rule), field,... histogram_summaryPreference(selectivity_struct, field, figName, params)
+            join([field  rule "histogram"],'-'), params.summary.trialAvg); 
         save_multiplePlots(figs,save_dir); %save as FIG and PNG
+%         figs = histogram_summarySelectivity(S.(rule), join(["selectivity-histogram-" rule],''), params.summary.trialAvg);
+%         save_multiplePlots(figs,save_dir); %save as FIG and PNG
         clearvars figs;
+        end
     end
 end

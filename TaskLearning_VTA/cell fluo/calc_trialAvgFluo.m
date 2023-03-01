@@ -5,6 +5,7 @@ trialSpec = params.trialSpec;
 trigger = params.trigger;
 subtractBaseline = params.subtractBaseline;
 time = trial_dFF.t;
+position = trial_dFF.position;
 trial_dff = trial_dFF.(params.trigger); %Fix cue,turn,arm entry event code...
 
 %Check for spatial-position or time series analyses
@@ -33,7 +34,9 @@ if trigger ~= "cueRegion"
     end
 
 else %Separate analysis for dF/F binned by spatial position
-    bootAvg.position = trial_dFF.position; %For spatial position series
+    % Truncate dFF and position vector if specified
+    idx = position >= params.positionWindow(1) & position <= params.positionWindow(2);
+    bootAvg.position = position(idx); %For spatial position series
 end
 
 % Calculate event-averaged dF/F
@@ -62,7 +65,6 @@ for i = 1:numel(trial_dff)
                 baseline = mean(dff(:,bootAvg.position<=0),2,"omitnan");
             end
             dff = dff - baseline;
-            %subset_label = join([subset_label,"baselineSubtracted"],'_');
         end
         
         dff = dff(~isnan(sum(dff,2)),:); %if iscell(dff{1} &&...) || ...

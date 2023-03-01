@@ -19,21 +19,19 @@
 function [ aligned, position ] = alignFluoByPosition( cells, trialData, params )
 
 % Center position reference within bins
-
-% position = params.positionWindow + 0.5*params.binWidth.*[1,-1]; %Explicit range from params 
 position = trialData.positionRange(:) + 0.5*params.binWidth.*[1;-1]; %Full length of maze 
 position = position(1):params.binWidth:position(2);
 
 % Distribute dFF into bins according to Y-position
 dFF = cell2mat(cells.dFF');
 t = cells.t; %Abbreviate
-% timeIdx = 1:params.binWidth:diff(params.positionWindow)+1; %Downsample positional edges
+
 timeIdx = 1:params.binWidth:diff(trialData.positionRange(:))+1; %Downsample positional edges
-trialTimes = trialData.time_trajectory(timeIdx,:)'; %Position-bin (cm) x Trials 
+trialTimes = trialData.time_trajectory(timeIdx,:)'; %transpose-->Trials x Position-bin (cm)
 
 aligned = NaN(size(trialTimes,1), size(trialTimes,2)-1, numel(cells.dFF));
 for i = 1:size(trialTimes,1)
-    binIdx = discretize(t,trialTimes(i,:));
+    binIdx = discretize(t, trialTimes(i,:));
     for j = unique(binIdx(~isnan(binIdx)))' %Loop through each bin
         aligned(i,j,:) = mean(dFF(binIdx==j,:),1,"omitnan"); %Take mean of dFF in each bin
     end

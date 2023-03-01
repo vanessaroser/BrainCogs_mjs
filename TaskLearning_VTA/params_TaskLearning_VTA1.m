@@ -4,8 +4,8 @@ function [ calculate, summarize, figures, mat_file, params ] = params_TaskLearni
 calculate.combined_data             = false;  %Combine relevant behavioral and imaging data in one MAT file ; truncate if necessary
 calculate.cellF                     = false; %Extract cellf and neuropilf from ROIs, excluding overlapping regions and extremes of the FOV
 calculate.dFF                       = false; %Calculate dF/F, with optional neuropil subtraction
-calculate.align_signals             = true; %Interpolate dF/F and align to behavioral events
-calculate.trial_average_dFF         = true; %dF/F averaged over specified subsets of trials
+calculate.align_signals             = false; %Interpolate dF/F and align to behavioral events
+calculate.trial_average_dFF         = false; %dF/F averaged over specified subsets of trials
 calculate.encoding_model            = false; %Encoding model
 
 calculate.fluorescence = false;
@@ -34,14 +34,14 @@ figures.raw_behavior                    = false;
 figures.FOV_mean_projection             = false;
 figures.timeseries                      = false; %Plot all timeseries for each session
 % Combined
-figures.trial_average_dFF               = true;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
+figures.trial_average_dFF               = false;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
 figures.time_average_dFF                = false;  %Overlay traces for distinct choices, outcomes, and rules (CO&R)
 figures.heatmap_modulation_idx          = false;  %Heatmap of selectivity idxs for COR for each session
 % Summary
 figures.summary_behavior                = false;    %Summary of descriptive stats, eg, nTrials and {trials2crit, pErr, oErr} for each rule
-figures.summary_selectivity_heatmap     = false;     %Heatmap of time-locked
-figures.summary_selectivity_histogram   = false;     %Heatmap of time-locked 
-figures.summary_modulation				= false;    %Box/line plots of grouped selectivity results for comparison
+figures.summary_selectivity_heatmap     = false;     %Heatmap of time- or position-locked selectivity
+figures.summary_selectivity_histogram   = false;     %Histogram of time-locked selectivity
+figures.summary_modulation				= false;    %Box/line plots of selectivity results grouped by rule/learning stage for comparison
 
 % Validation
 figures.validation_ROIs                 = false;
@@ -68,7 +68,7 @@ params.fluo.exclBorderWidth     = 10; %For calc_cellF: n-pixel border of FOV to 
 
 % Interpolation and alignment
 params.align.timeWindow     = [-1 3]; %Also used for bootavg, etc.
-params.align.positionWindow = [-10 90]; %Also used for bootavg, etc.
+params.align.positionWindow = [-50 90]; %Also used for bootavg, etc.
 params.align.interdt        = []; %Query intervals for interpolation in seconds (must be <0.5x original dt; preferably much smaller.)
 params.align.binWidth       = 5; %Spatial bins in cm
 
