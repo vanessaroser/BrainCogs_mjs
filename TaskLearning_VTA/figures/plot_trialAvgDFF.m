@@ -43,9 +43,11 @@ for i = 1:numel(cellIdx)
 
         for k = 1:numel(panels(j).trialType)
 
-            trialSpec = panels(j).trialType(k); %Trial specifier, eg {'left','hit','sound'}  
-            if ~isfield(trialSpec,trialSpec) 
-                continue; 
+            trialSpec = panels(j).trialType(k); %Trial specifier, eg {'left','hit','sound'}
+            if ~isfield(bootAvg, trialSpec)
+                panels(j).signal{k} = NaN(size(panels(j).x));
+                panels(j).CI{k} = NaN(2,size(panels(j).x,2));
+                continue;
             end
 
             %Legend entries

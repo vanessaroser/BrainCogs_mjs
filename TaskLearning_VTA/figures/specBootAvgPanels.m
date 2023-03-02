@@ -225,24 +225,5 @@ ax(i).lineStyle     = {'-','-'};
 ax(i).xLabel        = 'Time from cue onset (s)';  % XLabel
 i=i+1;
 
-ax(i).title         = "Cue Responses";
-ax(i).comparison    = "cue-onset-conflict";
-ax(i).trigger       = "cues";
-ax(i).trialType     = ["leftCue_left", "rightCue_left"];
-ax(i).window        = [-1, 1];
-ax(i).color         = {colors.left, colors.right}; %Choice: left/hit/sound vs right/hit/sound
-ax(i).lineStyle     = {'-','-'};
-ax(i).xLabel        = 'Time from cue onset (s)';  % XLabel
-i=i+1;
-ax(i).title         = "Cue Responses";
-ax(i).comparison    = "cue-onset-conflict";
-ax(i).trigger       = "cues";
-ax(i).trialType     = ["leftCue_right", "rightCue_right"];
-ax(i).window        = [-1, 1];
-ax(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
-ax(i).lineStyle     = {'-','-'};
-ax(i).xLabel        = 'Time from cue onset (s)';  % XLabel
-i=i+1;
-
 [ax(:).yLabel]          = deal('Cellular Fluorescence (dF/F)');
 [ax(:).verboseLegend]   = deal(false);
