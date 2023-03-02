@@ -23,9 +23,9 @@ if trigger ~= "cueRegion"
     end
 
     % Truncate dFF and time vector if specified
-    idx = time >= params.timeWindow(1) & time <= params.timeWindow(2);
-    time = time(idx);
-    trial_dff = cellfun(@(DFF) DFF(:,idx), trial_dff,'UniformOutput',false);
+    wIndex = time >= params.timeWindow(1) & time <= params.timeWindow(2);
+    time = time(wIndex);
+    trial_dff = cellfun(@(DFF) DFF(:,wIndex), trial_dff,'UniformOutput',false);
     bootAvg.t = time;
 
     %If applicable, convert matrices back to trialwise cell arrays
@@ -35,8 +35,8 @@ if trigger ~= "cueRegion"
 
 else %Separate analysis for dF/F binned by spatial position
     % Truncate dFF and position vector if specified
-    idx = position >= params.positionWindow(1) & position <= params.positionWindow(2);
-    bootAvg.position = position(idx); %For spatial position series
+    wIndex = position >= params.positionWindow(1) & position <= params.positionWindow(2);
+    bootAvg.position = position(wIndex); %For spatial position series
 end
 
 % Calculate event-averaged dF/F
@@ -50,7 +50,7 @@ for i = 1:numel(trial_dff)
         end
         disp(subset_label);
         trialMask = getMask(trials,trialSpec{k}); %Logical mask for specified combination of trials
-        dff = trial_dff{i}(trialMask,:); %Get subset of trials specified by trialMask
+        dff = trial_dff{i}(trialMask, wIndex); %Get dFF in specified window for subset of trials specified by trialMask
         
         %Convert trialwise cell arrays to matrices
         if iscell(dff)
@@ -60,14 +60,14 @@ for i = 1:numel(trial_dff)
         %Subtract baseline, if specified
         if isfield(params,'subtractBaseline') && params.subtractBaseline
             if isfield(bootAvg,'t')
-                baseline = mean(dff(:,bootAvg.t <= 0),2,"omitnan"); %Baseline = mean of windowed timepoints prior to event
+                baseline = mean(dff(:,bootAvg.t<=0),2,"omitnan"); %Baseline = mean of windowed timepoints prior to event
             else
                 baseline = mean(dff(:,bootAvg.position<=0),2,"omitnan");
             end
             dff = dff - baseline;
         end
         
-        dff = dff(~isnan(sum(dff,2)),:); %if iscell(dff{1} &&...) || ...
+        dff = dff(~isnan(sum(dff,2)),:); %Exclude traces that include NaNs
         bootAvg.(subset_label).cells(i) = getTrialBoot(dff,subset_label,params);
     end   
 end
