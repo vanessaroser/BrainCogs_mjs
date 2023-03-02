@@ -10,8 +10,7 @@ trial_dff = trial_dFF.(params.trigger); %Fix cue,turn,arm entry event code...
 
 %Check for spatial-position or time series analyses
 if trigger ~= "cueRegion"
-    
-    %Convert trialwise cell arrays to matrices, if applicable
+    %Convert trialwise cell arrays to matrices, eg for cue-aligned fluorescence
     if iscell(trial_dff{1})
         nEvents = cellfun(@(C) size(C,1), trial_dff{1}); %Number of events per trial
         trial_dff = cellfun(@cell2mat, trial_dff,'UniformOutput',false);
@@ -22,21 +21,22 @@ if trigger ~= "cueRegion"
         [trial_dff, time] = downsampleTS(trial_dff,time,params.dsFactor);
     end
 
-    % Truncate dFF and time vector if specified
+    % Index and truncate time vector if specified
     wIndex = time >= params.timeWindow(1) & time <= params.timeWindow(2);
-    time = time(wIndex);
-    trial_dff = cellfun(@(DFF) DFF(:,wIndex), trial_dff,'UniformOutput',false);
-    bootAvg.t = time;
-
-    %If applicable, convert matrices back to trialwise cell arrays
-    if exist('nEvents','var')
-        trial_dff = cellfun(@(C) mat2cell(C,nEvents), trial_dff,'UniformOutput',false);
-    end
-
+    bootAvg.t = time(wIndex);
+    
 else %Separate analysis for dF/F binned by spatial position
     % Truncate dFF and position vector if specified
     wIndex = position >= params.positionWindow(1) & position <= params.positionWindow(2);
     bootAvg.position = position(wIndex); %For spatial position series
+end
+
+%Truncate dFF to match time/position bounds
+trial_dff = cellfun(@(DFF) DFF(:,wIndex), trial_dff,'UniformOutput',false);
+
+%If applicable, convert matrices back to trialwise cell arrays
+if exist('nEvents','var')
+    trial_dff = cellfun(@(C) mat2cell(C,nEvents), trial_dff,'UniformOutput',false);
 end
 
 % Calculate event-averaged dF/F
@@ -49,8 +49,8 @@ for i = 1:numel(trial_dff)
             subset_label = trialSpec{k};
         end
         disp(subset_label);
-        trialMask = getMask(trials,trialSpec{k}); %Logical mask for specified combination of trials
-        dff = trial_dff{i}(trialMask, wIndex); %Get dFF in specified window for subset of trials specified by trialMask
+        trialMask = getMask(trials, trialSpec{k}); %Logical mask for specified combination of trials
+        dff = trial_dff{i}(trialMask, :); %Get dFF in specified window for subset of trials specified by trialMask
         
         %Convert trialwise cell arrays to matrices
         if iscell(dff)
