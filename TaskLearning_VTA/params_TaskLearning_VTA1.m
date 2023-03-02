@@ -5,7 +5,7 @@ calculate.combined_data             = false;  %Combine relevant behavioral and i
 calculate.cellF                     = false; %Extract cellf and neuropilf from ROIs, excluding overlapping regions and extremes of the FOV
 calculate.dFF                       = false; %Calculate dF/F, with optional neuropil subtraction
 calculate.align_signals             = false; %Interpolate dF/F and align to behavioral events
-calculate.trial_average_dFF         = true; %dF/F averaged over specified subsets of trials
+calculate.trial_average_dFF         = false; %dF/F averaged over specified subsets of trials
 calculate.encoding_model            = false; %Encoding model
 
 calculate.fluorescence = false;
@@ -17,7 +17,7 @@ if any([calculate.cellF, calculate.dFF,...
 end
 
 %% SUMMARIZE RESULTS
-summarize.trialDFF              = true;
+summarize.trialDFF              = false;
 summarize.imaging               = false;
 summarize.selectivity           = false;
 
@@ -83,10 +83,10 @@ params.bootAvg.subtractBaseline = false;
 params.bootAvg   = specBootAvgParams(params.bootAvg); %params.bootAvg.trigger(1:3) = "start","firstcue","outcome", etc...
 
 % ------- Single-unit decoding -------
-params.decode.decode_type     = ...
-    {'choice_sound','choice_action','prior_choice','prior_choice_action',...
-    'outcome','prior_outcome','rule_SL','rule_SR'}; %MUST have same number of elements as rows in trialSpec. Eg, = {'choice','outcome','rule_SL','rule_SR'}
-params.decode.trialSpec       = params.bootAvg.trialSpec; %Spec for each trial subset for comparison (conjunction of N fields from 'trials' structure.)
+% params.decode.decode_type     = ...
+%     {'choice_sound','choice_action','prior_choice','prior_choice_action',...
+%     'outcome','prior_outcome','rule_SL','rule_SR'}; %MUST have same number of elements as rows in trialSpec. Eg, = {'choice','outcome','rule_SL','rule_SR'}
+% params.decode.trialSpec       = params.bootAvg.trialSpec; %Spec for each trial subset for comparison (conjunction of N fields from 'trials' structure.)
 
 % [p.decodeType, p.trialSpec]    = list_trialSpecs('bootAvg'); %Spec for each trial subset for comparison (conjunction of N fields from 'trials' structure.)
 % p.dsFactor        = params.bootAvg.dsFactor; %Downsample from interpolated rate of 1/params.interdt

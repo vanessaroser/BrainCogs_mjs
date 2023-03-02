@@ -12,8 +12,10 @@ params(i).avgWindow     = [0, 90]; %Window for within-trial averaging
 params(i).edges         = [-inf, -0.2:0.01:0.2, inf]; %For histogram of selectivity
 params(i).color         = {colors.left, colors.right}; %Choice: left/hit/sound vs right/hit/sound
 params(i).lineStyle     = {'-','-'};
-params(i).dataLabel.selectivity = 'Selectivity, |(R-L)/(R+L)|';  % X Axis or Color Axis Label
-params(i).dataLabel.preference  = 'Preference, (R-L)/(R+L)';  % X Axis or Color Axis Label
+% params(i).dataLabel.selectivity = 'Selectivity, |(R-L)/(R+L)|';  % X Axis or Color Axis Label
+params(i).dataLabel.selectivity = 'Selectivity';  % X Axis or Color Axis Label
+% params(i).dataLabel.preference  = 'Preference, (R-L)/(R+L)';  % X Axis or Color Axis Label
+params(i).dataLabel.preference  = 'Preference (L<->R)';  % X Axis or Color Axis Label
 params(i).xLabel        = 'Distance (cm)';  % XLabel
 
 i = i+1;
@@ -28,8 +30,8 @@ params(i).avgWindow     = [0, 90];
 params(i).edges         = [-inf, -0.2:0.01:0.2, inf]; %For histogram of selectivity
 params(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
 params(i).lineStyle     = {'-','-'};
-params(i).dataLabel.selectivity = 'Selectivity, |(R-L)/(R+L)|';  % X Axis or Color Axis Label
-params(i).dataLabel.preference  = 'Preference, (R-L)/(R+L)';  % X Axis or Color Axis Label
+params(i).dataLabel.selectivity = 'Selectivity';  % X Axis or Color Axis Label
+params(i).dataLabel.preference  = 'Preference (L<->R)';  % X Axis or Color Axis Label
 params(i).xLabel        = 'Distance (cm)';  % XLabel
 
 i = i+1;
@@ -44,24 +46,40 @@ params(i).avgWindow     = [0, 90];
 params(i).edges         = [-inf, -0.2:0.01:0.2, inf]; %For histogram of selectivity
 params(i).color         = {colors.left,colors.right}; %Choice: left/hit/sound vs right/hit/sound
 params(i).lineStyle     = {':',':'};
-params(i).dataLabel.selectivity = 'Selectivity, |(R-L)/(R+L)|';  % X Axis or Color Axis Label
-params(i).dataLabel.preference  = 'Preference, (R-L)/(R+L)';  % X Axis or Color Axis Label
+params(i).dataLabel.selectivity = 'Selectivity';  % X Axis or Color Axis Label
+params(i).dataLabel.preference  = 'Preference (L<->R)';  % X Axis or Color Axis Label
+params(i).xLabel        = 'Distance (cm)';  % XLabel
+
+i = i+1;
+%Prior outcome aligned to y-position in rewarded trials
+params(i).comparison = "accuracy_cueRegion";
+params(i).trigger = "cueRegion";
+params(i).trialSpec = ["error","correct"];
+%For figure
+params(i).title         = "Accuracy";
+params(i).window        = [-50, 90]; %Window for across-trial averaging
+params(i).avgWindow     = [0, 90];
+params(i).edges         = [-inf, -0.2:0.02:0.6, inf]; %For histogram of selectivity
+params(i).color         = {colors.correct,colors.err}; %Choice: left/hit/sound vs right/hit/sound
+params(i).lineStyle     = {'-','-'};
+params(i).dataLabel.selectivity = 'Selectivity';  % X Axis or Color Axis Label
+params(i).dataLabel.preference  = 'Preference (Err<->Rew)';  % X Axis or Color Axis Label
 params(i).xLabel        = 'Distance (cm)';  % XLabel
 
 i = i+1;
 %Prior outcome aligned to y-position in rewarded trials
 params(i).comparison = "priorOutcome_cueRegion";
 params(i).trigger = "cueRegion";
-params(i).trialSpec = ["correct_priorError", "correct_priorCorrect"];
+params(i).trialSpec = ["priorError","priorCorrect"];
 %For figure
 params(i).title         = "Prior Outcome";
 params(i).window        = [-50, 90]; %Window for across-trial averaging
 params(i).avgWindow     = [0, 90];
-params(i).edges         = [-0.1:0.02:0.4, inf]; %For histogram of selectivity
-params(i).color         = {colors.correct,colors.err}; %Choice: left/hit/sound vs right/hit/sound
+params(i).edges         = [-inf, -0.2:0.02:0.6, inf]; %For histogram of selectivity
+params(i).color         = {colors.correct, colors.err}; %Choice: left/hit/sound vs right/hit/sound
 params(i).lineStyle     = {'-','-'};
-params(i).dataLabel.selectivity = 'Selectivity, |(Rew-Err)/(Rew+Err)|';  % X Axis or Color Axis Label
-params(i).dataLabel.preference  = 'Preference, (Rew-Err)/(Rew+Err)';  % X Axis or Color Axis Label
+params(i).dataLabel.selectivity = 'Selectivity';  % X Axis or Color Axis Label
+params(i).dataLabel.preference  = 'Preference (Err<->Rew)';  % X Axis or Color Axis Label
 params(i).xLabel        = 'Distance (cm)';  % XLabel
 
 % i = i+1;
