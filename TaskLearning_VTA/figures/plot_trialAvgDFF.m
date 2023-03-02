@@ -43,7 +43,10 @@ for i = 1:numel(cellIdx)
 
         for k = 1:numel(panels(j).trialType)
 
-            trialSpec = panels(j).trialType(k); %Trial specifier, eg {'left','hit','sound'}
+            trialSpec = panels(j).trialType(k); %Trial specifier, eg {'left','hit','sound'}  
+            if ~isfield(trialSpec,trialSpec) 
+                continue; 
+            end
 
             %Legend entries
             leg_name =  replace(trialSpec,'_',' ');
