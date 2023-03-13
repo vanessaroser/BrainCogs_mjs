@@ -31,6 +31,7 @@ for i=1:numel(dirs.sessions)
         dirs.roi{i} = fullfile(dirs.sessions{i},temp.name);
     end
 end
+dirs.roi = dirs.roi(~cellfun(@isempty,dirs.roi));
 
 %Get mean projection from each imaging session
 for i = 1:numel(dirs.roi)
