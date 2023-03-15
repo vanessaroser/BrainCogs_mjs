@@ -931,7 +931,9 @@ temp = [edges,F_cellMask];
 rel_F = (F_cellMask - mean(F_surround))/mean(F_surround);
 text(handles.axes4,max(temp),max(counts),num2str(rel_F,3));
 xlim(handles.axes4,[min(temp),1.2*max(temp)]);
+if sum(counts)>0
 ylim(handles.axes4,[0,1.1*max(counts)]); %ylim set to 1.1 * maximum count
+end
 %-----------
 
 %If checkbox 'Import prior ROIs' checked, popup figure with prior ROIs
