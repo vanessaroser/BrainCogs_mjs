@@ -11,19 +11,20 @@ for i = 1:numel(subjects)
     %Subject ID, ie DB key 'subject_fullname'
     subjectID = subjects(i).ID;
 
-    %Get bucket paths
+    %Get paths on cup.princeton.edu
     key.subject_fullname = char(subjectID); %Must be char, even though annotation says 'string'
-    data_files = fetch(acquisition.SessionStarted & key, 'remote_path_behavior_file');
+    data_files = fetch(acquisition.SessionStarted & key, 'new_remote_path_behavior_file');
     session_file = cell(numel(data_files),1);
     include = false(numel(data_files),1);
     for j = 1:numel(data_files)
-        [~, session_file{j}] = lab.utils.get_path_from_official_dir(data_files(j).remote_path_behavior_file);
+        [~, session_file{j}] = lab.utils.get_path_from_official_dir(data_files(j).new_remote_path_behavior_file);
+        
         include(j) = isfile(session_file{j});
     end
 
     %Filter by experiment
-    include(~contains(session_file,experiment)) = false; %Exclude filenames that do not contain 'experiment'
-    data_files = data_files(include);
+%     include(~contains(session_file,experiment)) = false; %Exclude filenames that do not contain 'experiment'
+%     data_files = data_files(include);
 
     %Initialize output structures
     trialData(numel(data_files),1) = struct(...
@@ -49,11 +50,11 @@ for i = 1:numel(subjects)
         'maxCorrectMoving',NaN,'maxCorrectMoving_congruent',NaN,'maxCorrectMoving_conflict',NaN,...
         'median_velocity', [], 'median_pSkid',[],'median_stuckTime',[],...
         'bias', [],...
-        'remote_path_behavior_file', []);
+        'new_remote_path_behavior_file', []);
 
     %Load each matfile and aggregate into structure
     for j = 1:numel(data_files)
-        disp(['Loading ' data_files(j).remote_path_behavior_file '...']);
+        disp(['Loading ' data_files(j).new_remote_path_behavior_file '...']);
         [ ~, logs ] = loadRemoteVRFile( subjectID, data_files(j).session_date);
 
         %Incorporate any new log variables created during experiment
@@ -83,8 +84,8 @@ for i = 1:numel(subjects)
         lMaze = @(blockIdx) lCue(blockIdx) + lMem(blockIdx) + wArm(blockIdx);
 
         %Check for empty blocks or trials and remove (discuss with Alvaro!)
-        logs = removeEmpty(logs,data_files(j).remote_path_behavior_file);
-        [logs, excludeBlocks] = excludeBadBlocks(logs, experiment); %Edit function to exclude specific blocks
+        logs = removeEmpty(logs,data_files(j).new_remote_path_behavior_file);
+        [logs, excludeBlocks] = excludeBadBlocks(logs); %Edit function to exclude specific blocks
         if isempty(logs)
             continue
         end
@@ -303,7 +304,7 @@ for i = 1:numel(subjects)
             'median_pSkid', median_pSkid,... %Mean proportion of maze where mouse skidded along walls
             'median_stuckTime', median_stuckTime,...
             'bias', bias,...
-            'remote_path_behavior_file', data_files(j).remote_path_behavior_file);
+            'new_remote_path_behavior_file', data_files(j).new_remote_path_behavior_file);
     end
 
     %Assign fields to current subject
