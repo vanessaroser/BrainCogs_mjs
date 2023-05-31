@@ -10,9 +10,9 @@ for i = 1:numel(subjects)
     sessionLevel = cellfun(@(L) L(end),{subjects(i).sessions.level});
     idx = sessionLevel<6;
     [subjects(i).sessions(idx).sessionType] = deal("Forced");
-    idx = sessionLevel==6;
+    idx = ismember(sessionLevel, [6,9]);
     [subjects(i).sessions(idx).sessionType] = deal("Sensory");
-    idx = sessionLevel==7;
+    idx = ismember(sessionLevel, [7,8]);
     [subjects(i).sessions(idx).sessionType] = deal("Alternation");
     
     subjects(i).sessions = orderfields(subjects(i).sessions, permVect); %Place sessionType after 'level'

@@ -1,7 +1,8 @@
 function dbase = startAnimalDatabaseGUI()
 
 dirs.code = fullfile('C:','Users','mjs20','Documents','GitHub');
-
+ 
+addpath(genpath(fullfile(dirs.code,'General')));
 addGitRepo(dirs,'General','TankMouseVR','U19-pipeline-matlab');
 setenv('DB_PREFIX','u19_');
 setenv('DJ_USER','mjs20');

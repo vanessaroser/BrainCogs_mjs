@@ -12,7 +12,7 @@ transparency = 0.3;
 colors = params.colors;
 
 %Prefix for save
-prefix = 'Group_';
+prefix = 'Group';
 
 %Aggregate data
 nSensory = params.nSensory;
@@ -38,7 +38,7 @@ Title = 'Sensory to Alternation';
 cbrew = brewColorSwatches;
 shading = cbrew.blue;
     
-    fig = figure('Name',join([prefix,'_', var],''));
+    fig = figure('Name',join([prefix,var],'-'));
     colororder(cbrew.series);
     ax = axes();
     hold on;
