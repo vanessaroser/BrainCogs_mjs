@@ -2,7 +2,7 @@
 close all;
 experiment = 'mjs_tactile2visual'; %If empty, fetch data from all experiments
 
-addGitRepo(getRoots(),'General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs');
+dirs = addGitRepo(getRoots(),'General','TankMouseVR','U19-pipeline-matlab','BrainCogs_mjs');
 dirs.data = fullfile(dirs.root,'tactile2visual','data');
 dirs.results = fullfile(dirs.root,'tactile2visual','results',experiment);
 dirs.summary = fullfile(dirs.root,'tactile2visual','summary',experiment);

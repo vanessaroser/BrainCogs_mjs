@@ -18,13 +18,8 @@ for i = 1:numel(subjects)
     include = false(numel(data_files),1);
     for j = 1:numel(data_files)
         [~, session_file{j}] = lab.utils.get_path_from_official_dir(data_files(j).new_remote_path_behavior_file);
-        
         include(j) = isfile(session_file{j});
     end
-
-    %Filter by experiment
-%     include(~contains(session_file,experiment)) = false; %Exclude filenames that do not contain 'experiment'
-%     data_files = data_files(include);
 
     %Initialize output structures
     trialData(numel(data_files),1) = struct(...
@@ -53,9 +48,32 @@ for i = 1:numel(subjects)
         'new_remote_path_behavior_file', []);
 
     %Load each matfile and aggregate into structure
-    for j = 1:numel(data_files)
+    sessionDate = string(unique({data_files(:).session_date}));
+    for j = 1:numel(sessionDate)
         disp(['Loading ' data_files(j).new_remote_path_behavior_file '...']);
-        [ ~, logs ] = loadRemoteVRFile( subjectID, data_files(j).session_date);
+        [ ~, logs ] = loadRemoteVRFile(subjectID, sessionDate(j));
+
+        %Remove empty or short sessions
+        logDuration = arrayfun(@(idx)...
+            datetime(logs(idx).session.end) - datetime(logs(idx).session.start), 1:numel(logs));
+        logs = logs(~cellfun(@isempty,{logs.numTrials}));
+        logs = logs(logDuration < minutes(10));
+
+        %Combine sessions from same date (functionalize)
+        if numel(logs)>1
+            fields = fieldnames(logs);
+            for k = 1:numel(fields)
+                if ischar(logs.(fields{k}))
+                    if all(strcmp({logs.(fields{k})}, logs(1).(fields{k})))
+                        newlog.(fields{k}) = {logs.(fields{k})};
+                    else
+                    end
+                else
+                    newlog.(fields{k}) = [logs.(fields{k})];
+                end
+            end
+            logs = newlog;
+        end
 
         %Incorporate any new log variables created during experiment
         fields = fieldnames(logs);
@@ -76,7 +94,7 @@ for i = 1:numel(subjects)
         ver = @(blockIdx) logs.version(min(blockIdx,numel(logs.version)));
         maze = @(blockIdx) ver(blockIdx).mazes(logs.block(blockIdx).mazeID).variable; %May change based on maze level
         world = @(blockIdx) ver(blockIdx).variables; %Changes with protocol
-        lStart = @(blockIdx) str2double(maze(blockIdx).lStart); 
+        lStart = @(blockIdx) str2double(maze(blockIdx).lStart);
         lCue = @(blockIdx) str2double(maze(blockIdx).lCue);
         lMem = @(blockIdx) str2double(maze(blockIdx).lMemory);
         wArm = @(blockIdx)...%Add width of arm minus out-of-range position "border"
@@ -86,7 +104,7 @@ for i = 1:numel(subjects)
         %Check for empty blocks or trials and remove (discuss with Alvaro!)
         logs = removeEmpty(logs,data_files(j).new_remote_path_behavior_file);
         [logs, excludeBlocks] = excludeBadBlocks(logs); %Edit function to exclude specific blocks
-        if isempty(logs)
+        if isempty(logs) || isempty(logs.block)
             continue
         end
 
@@ -94,7 +112,7 @@ for i = 1:numel(subjects)
         blockIdx = nan(1,numel([logs.block.trial]));
         [start_time, duration, response_time, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
         [position, velocity, collision_locations, stuck_locations] = deal(cell(numel(blockIdx),1));
-        
+
         %Initialize as one cell per block
         [theta_trajectory, x_trajectory, time_trajectory, positionRange] =...
             deal(cell(numel(logs.block),1)); %Matrices: nLocation x nTrial
@@ -112,13 +130,11 @@ for i = 1:numel(subjects)
             Trials = logs.block(k).trial;
             lastTrial = firstTrial + numel(Trials) - 1;
             blockIdx(firstTrial:lastTrial) = k;
-            
+
             %Event times
             eventTimes(blockIdx==k,1) = getTrialEventTimes(logs, k); %Need logs and block idx for time, because restarts/new blocks cause divergent time references
 
             %Time from trial start to choice & Duration including ITI
-            %***Change Based on Alvaro's Advice!***
-            %   -Use trials.time and trials.start
             response_time(blockIdx==k)  = arrayfun(@(idx) Trials(idx).time(Trials(idx).iterations), 1:numel(Trials));
             duration(blockIdx==k)  = [Trials.duration];
 
@@ -130,7 +146,7 @@ for i = 1:numel(subjects)
             queryPts = -lStart(k):lMaze(k);
             x_trajectory{k} = getTrialTrajectories({Trials.position}, 'x', queryPts);
             theta_trajectory{k} = getTrialTrajectories({Trials.position}, 'theta', queryPts);
-            
+
             %Time at first crossing of each Y-position
             time_trajectory{k} = getTimebyPosition(Trials, eventTimes(blockIdx==k), queryPts);
             positionRange{k} = queryPts([1,end])';
@@ -219,7 +235,7 @@ for i = 1:numel(subjects)
         err = ~correct & ~omit;
 
         %Trial mask for exclusions
-        exclude = omit | ~forward; %Additions made downstream, eg for warm-up blocks, etc 
+        exclude = omit | ~forward; %Additions made downstream, eg for warm-up blocks, etc
         exclude(ismember(blockIdx,excludeBlocks)) = true; %Exclude trials from blocks specified in excludeBadBlocks()
 
         trials(j) = struct(...
@@ -259,7 +275,7 @@ for i = 1:numel(subjects)
             median_velocity(k) = median(trialData(j).mean_velocity(fwdIdx,2)); %Median velocity across all completed trials (x,y,theta)
             median_pSkid(k) = median(trialData(j).pSkid(fwdIdx)); %Median proportion of maze where mouse skidded along walls
             median_stuckTime(k) = median(trialData(j).stuck_time,'omitnan');
-            
+
             %Choice bias
             leftError = sum(left(err & blockIdx==k))/sum(left(blockIdx==k));
             rightError = sum(right(err & blockIdx==k))/sum(right(blockIdx==k));
