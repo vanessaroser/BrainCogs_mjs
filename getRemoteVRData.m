@@ -54,24 +54,21 @@ for i = 1:numel(subjects)
         [ ~, logs ] = loadRemoteVRFile(subjectID, sessionDate(j));
 
         %Remove empty or short sessions
+        logs = logs(~cellfun(@isempty,{logs.numTrials}));
         logDuration = arrayfun(@(idx)...
             datetime(logs(idx).session.end) - datetime(logs(idx).session.start), 1:numel(logs));
-        logs = logs(~cellfun(@isempty,{logs.numTrials}));
         logs = logs(logDuration < minutes(10));
+        if all(isempty(logs))
+            continue
+        end
 
         %Combine sessions from same date (functionalize)
         if numel(logs)>1
-            fields = fieldnames(logs);
+            fields = ["session", "block"];
             for k = 1:numel(fields)
-                if ischar(logs.(fields{k}))
-                    if all(strcmp({logs.(fields{k})}, logs(1).(fields{k})))
-                        newlog.(fields{k}) = {logs.(fields{k})};
-                    else
-                    end
-                else
-                    newlog.(fields{k}) = [logs.(fields{k})];
-                end
+                   newlog.(fields{k}) = [logs.(fields{k})];
             end
+            newlog.animal = logs(1).animal;
             logs = newlog;
         end
 
@@ -102,7 +99,7 @@ for i = 1:numel(subjects)
         lMaze = @(blockIdx) lCue(blockIdx) + lMem(blockIdx) + wArm(blockIdx);
 
         %Check for empty blocks or trials and remove (discuss with Alvaro!)
-        logs = removeEmpty(logs,data_files(j).new_remote_path_behavior_file);
+        logs = removeEmpty(logs, data_files(j).new_remote_path_behavior_file);
         [logs, excludeBlocks] = excludeBadBlocks(logs); %Edit function to exclude specific blocks
         if isempty(logs) || isempty(logs.block)
             continue
