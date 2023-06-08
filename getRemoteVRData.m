@@ -66,16 +66,14 @@ for i = 1:numel(subjects)
             continue
         end
 
-        %Combine sessions from same date (functionalize)
-        if numel(logs)>1
-            fields = ["session", "block", "version"];
-            for k = 1:numel(fields)
-                   newlog.(fields{k}) = [logs.(fields{k})];
-            end
-            newlog.animal = logs(1).animal;
-            newlog.version = logs(1).version;
-            logs = newlog;
+        %Simplify logs and combine sessions from same date (functionalize)
+        newlog.animal = logs(1).animal;
+        fields = ["session", "block", "version"];
+        for k = 1:numel(fields)
+            newlog.(fields{k}) = [logs.(fields{k})];
         end
+        logs = newlog;
+
 
         %Incorporate any new log variables created during experiment
         fields = fieldnames(logs);
