@@ -32,3 +32,8 @@ if load_mat
         end
     end
 end
+
+%Error handling for absent output
+if ~exist('log','var')
+    log = [];
+end

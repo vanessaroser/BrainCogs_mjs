@@ -20,6 +20,7 @@ for i = 1:numel(subjects)
         [~, session_file{j}] = lab.utils.get_path_from_official_dir(data_files(j).new_remote_path_behavior_file);
         include(j) = isfile(session_file{j});
     end
+    data_files = data_files(include);
 
     %Initialize output structures
     trialData(numel(data_files),1) = struct(...
@@ -52,23 +53,27 @@ for i = 1:numel(subjects)
     for j = 1:numel(sessionDate)
         disp(['Loading ' data_files(j).new_remote_path_behavior_file '...']);
         [ ~, logs ] = loadRemoteVRFile(subjectID, sessionDate(j));
+        if isempty(logs)
+            continue
+        end
 
         %Remove empty or short sessions
         logs = logs(~cellfun(@isempty,{logs.numTrials}));
         logDuration = arrayfun(@(idx)...
             datetime(logs(idx).session.end) - datetime(logs(idx).session.start), 1:numel(logs));
-        logs = logs(logDuration < minutes(10));
+        logs = logs(logDuration > minutes(10));
         if all(isempty(logs))
             continue
         end
 
         %Combine sessions from same date (functionalize)
         if numel(logs)>1
-            fields = ["session", "block"];
+            fields = ["session", "block", "version"];
             for k = 1:numel(fields)
                    newlog.(fields{k}) = [logs.(fields{k})];
             end
             newlog.animal = logs(1).animal;
+            newlog.version = logs(1).version;
             logs = newlog;
         end
 
@@ -107,7 +112,7 @@ for i = 1:numel(subjects)
 
         %Initialize trial variables aggregated from logs
         blockIdx = nan(1,numel([logs.block.trial]));
-        [start_time, duration, response_time, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
+        [duration, response_time, pSkid, stuck_time] = deal(nan(numel(blockIdx),1));
         [position, velocity, collision_locations, stuck_locations] = deal(cell(numel(blockIdx),1));
 
         %Initialize as one cell per block
@@ -182,8 +187,6 @@ for i = 1:numel(subjects)
             time_trajectory = {time_trajectory};
             positionRange = {positionRange};
         end
-
-        start_time = start_time-start_time(1); %Align to first trial
 
         trialData(j) = struct(...
             'session_date', datetime(data_files(j).session_date),...
