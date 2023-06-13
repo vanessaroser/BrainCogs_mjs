@@ -21,37 +21,15 @@ for i = 1:numel(subjects)
         include(j) = isfile(session_file{j});
     end
     data_files = data_files(include);
+    if isempty(data_files)
+        continue
+    end
 
-    %Initialize output structures
-    trialData(numel(data_files),1) = struct(...
-        'session_date', [],'eventTimes',struct(),...
-        'duration',[],'response_time',[],...
-        'position',[],'velocity',[],'mean_velocity',[],...
-        'x_trajectory',[],'theta_trajectory',[],'time_trajectory',[],'positionRange',[],...
-        'collision_locations',[],'pSkid',[],'stuck_locations',[],'stuck_time',[]);
 
-    trials(numel(data_files),1) = ...
-        struct('left',[],'right',[],'leftCue',[],'rightCue',[],... %logical
-        'correct',[],'error',[],'omit',[],'congruent',[],'conflict',[],... %logical
-        'priorLeft',[],'priorRight',[],'priorCorrect',[],'priorError',[],...
-        'forward',[],'stuck',[],'exclude',[],...  %logical
-        'level',[],'blockIdx',[]); %unsigned integer
-
-    sessions(numel(data_files),1) = struct(...
-        'session_date', [], 'level', [], 'reward_scale', [], 'maxSkidAngle', [],...
-        'lCue', [], 'lMem', [], 'lMaze', [],...
-        'nTrials', [], 'nCompleted', [], 'nForward', [],...
-        'pCorrect', [], 'pCorrect_congruent',[], 'pCorrect_conflict',[],...
-        'pOmit', [], 'pStuck', [],...
-        'maxCorrectMoving',NaN,'maxCorrectMoving_congruent',NaN,'maxCorrectMoving_conflict',NaN,...
-        'median_velocity', [], 'median_pSkid',[],'median_stuckTime',[],...
-        'bias', [],...
-        'new_remote_path_behavior_file', []);
 
     %Load each matfile and aggregate into structure
     sessionDate = string(unique({data_files(:).session_date}));
     for j = 1:numel(sessionDate)
-        disp(['Loading ' data_files(j).new_remote_path_behavior_file '...']);
         [ ~, logs ] = loadRemoteVRFile(subjectID, sessionDate(j));
         if isempty(logs)
             continue
@@ -74,6 +52,32 @@ for i = 1:numel(subjects)
         end
         logs = newlog;
 
+
+        %Initialize output structures
+        trialData(numel(sessionDate),1) = struct(...
+            'session_date', [],'eventTimes',struct(),...
+            'duration',[],'response_time',[],...
+            'position',[],'velocity',[],'mean_velocity',[],...
+            'x_trajectory',[],'theta_trajectory',[],'time_trajectory',[],'positionRange',[],...
+            'collision_locations',[],'pSkid',[],'stuck_locations',[],'stuck_time',[]);
+
+        trials(numel(sessionDate),1) = ...
+            struct('left',[],'right',[],'leftCue',[],'rightCue',[],... %logical
+            'correct',[],'error',[],'omit',[],'congruent',[],'conflict',[],... %logical
+            'priorLeft',[],'priorRight',[],'priorCorrect',[],'priorError',[],...
+            'forward',[],'stuck',[],'exclude',[],...  %logical
+            'level',[],'blockIdx',[]); %unsigned integer
+
+        sessions(numel(sessionDate),1) = struct(...
+            'session_date', [], 'level', [], 'taskRule', [], 'reward_scale', [], 'maxSkidAngle', [],...
+            'lCue', [], 'lMem', [], 'lMaze', [],...
+            'nTrials', [], 'nCompleted', [], 'nForward', [],...
+            'pCorrect', [], 'pCorrect_congruent',[], 'pCorrect_conflict',[],...
+            'pOmit', [], 'pStuck', [],...
+            'maxCorrectMoving',NaN,'maxCorrectMoving_congruent',NaN,'maxCorrectMoving_conflict',NaN,...
+            'median_velocity', [], 'median_pSkid',[],'median_stuckTime',[],...
+            'bias', [],...
+            'new_remote_path_behavior_file', []);
 
         %Incorporate any new log variables created during experiment
         fields = fieldnames(logs);
@@ -101,8 +105,7 @@ for i = 1:numel(subjects)
             diff(double(string({world(blockIdx).armBorder, world(blockIdx).wArm})));
         lMaze = @(blockIdx) lCue(blockIdx) + lMem(blockIdx) + wArm(blockIdx);
 
-        %Check for empty blocks or trials and remove (discuss with Alvaro!)
-        logs = removeEmpty(logs, data_files(j).new_remote_path_behavior_file);
+        %Check for empty blocks or trials and remove
         [logs, excludeBlocks] = excludeBadBlocks(logs); %Edit function to exclude specific blocks
         if isempty(logs) || isempty(logs.block)
             continue
@@ -187,7 +190,7 @@ for i = 1:numel(subjects)
         end
 
         trialData(j) = struct(...
-            'session_date', datetime(data_files(j).session_date),...
+            'session_date', datetime(sessionDate),...
             'eventTimes', eventTimes,...
             'duration', duration,...
             'response_time', response_time,...
@@ -206,22 +209,48 @@ for i = 1:numel(subjects)
         %---Trial masks--------------------------------------------------------------------
 
         %Initialize
-        [left, right, leftCue, rightCue,...
+        [left, right, leftTowers, rightTowers,...
             correct, omit, congruent, conflict, forward, stuck] = deal(false(1,numel(blockIdx)));
 
         mazeLevel = [logs.block.mazeID];
         for k = 1:numel(logs.block)
             %Cues, choices, and outcomes
             Trials = logs.block(k).trial;
-            leftCue(blockIdx==k) = cellfun(@(C) sum(C(1,:))>sum(C(2,:)),{Trials.cueCombo});
-            rightCue(blockIdx==k) = cellfun(@(C) sum(C(1,:))<sum(C(2,:)),{Trials.cueCombo});
+            
+            %Visual cues
+            nTowers = cellfun(@numel,reshape([Trials.cuePos],2,numel(Trials)))';
+            leftTowers(blockIdx==k) = nTowers(:,1) > nTowers(:,2);
+            rightTowers(blockIdx==k) = nTowers(:,1) < nTowers(:,2);
+            
+            %Tactile cues
+            [leftPuffs, rightPuffs] = deal(false(numel(Trials),1));
+            nPuffs = false(numel(Trials),2);
+            if isfield(Trials,"puffPos")
+                nPuffs = cellfun(@numel,reshape([Trials.puffPos],numel(Trials),2));
+                leftPuffs(blockIdx==k) = nPuffs(:,1) > nPuffs(:,2);
+                rightPuffs(blockIdx==k) = nPuffs(:,1) < nPuffs(:,2);
+            end
+
+            %Choices
             left(blockIdx==k) = [Trials.choice]==Choice.L;
             right(blockIdx==k) = [Trials.choice]==Choice.R;
+            
+            %Outcomes
             correct(blockIdx==k) = [Trials.choice]==[Trials.trialType];
             omit(blockIdx==k) = [Trials.choice]==Choice.nil;
-            %Trials where sensory and alternation rules agree or conflict
-            congruent(blockIdx==k) = int8([Trials.trialType]) == int8(rightCue(blockIdx==k))+1; %L,R choice enumeration = 1,2
-            conflict(blockIdx==k) = ~congruent(blockIdx==k); %R,L choice enumeration = 1,2
+            
+            %Trials where alternative rules agree or conflict
+            %congruent(blockIdx==k) = int8([Trials.trialType]) == int8(rightTowers(blockIdx==k))+1; %L,R choice enumeration = 1,2
+            %conflict(blockIdx==k) = ~congruent(blockIdx==k); %R,L choice enumeration = 1,2
+            if isfield(Trials,"visualRule")...
+                    && all([Trials.visualRule]) || all([Trials.tactileRule])
+            
+            elseif isfield(Trials,"alternateTrials") && all([Trials.alternateTrials])
+
+            else %Sensory rule (vs Alternation) or forced choice
+                congruent(blockIdx==k) = true;
+            end
+            
             %Trials where mouse turns greater than pi/2 rad L or R in cue or memory segment
             forward(blockIdx==k) = getStraightNarrowTrials({Trials.position},[0, lCue(k)]);
             %Trials where mouse gets stuck after collision along cue segment
@@ -237,7 +266,7 @@ for i = 1:numel(subjects)
         exclude(ismember(blockIdx,excludeBlocks)) = true; %Exclude trials from blocks specified in excludeBadBlocks()
 
         trials(j) = struct(...
-            'left',left,'right',right,'leftCue',leftCue,'rightCue',rightCue,...
+            'left',left,'right',right,'leftCue',leftTowers,'rightCue',rightTowers,...
             'correct',correct,'error',err,'omit',omit,...
             'priorLeft',[0, left(1:end-1)],'priorRight',[0, right(1:end-1)],...
             'priorCorrect',[0, correct(1:end-1)],'priorError',[0, err(1:end-1)],...
@@ -250,17 +279,26 @@ for i = 1:numel(subjects)
 
         %Block data
 
-        [reward_scale, nTrials, nCompleted, nForward,...         %Initialize
+        [rule, reward_scale, nTrials, nCompleted, nForward,...         %Initialize
             pCorrect, pCorrect_congruent, pCorrect_conflict, pOmit, pStuck,...
             median_velocity, median_pSkid, median_stuckTime] = deal([]);
         maxCorrectMoving = struct('all',[],'congruent',[],'conflict',[]);
 
+        ruleNames = ["forcedChoice","visualRule","tactileRule","alternateTrials"];
+        rule = [];
         for k = 1:numel(logs.block)
-
-            fwdIdx = forward & blockIdx==k;
+            %Task rule
+            for kk = 1:numel(ruleNames)
+                if isfield(maze(k),ruleNames(kk)) && logical(str2double(maze(k).(ruleNames(kk))))
+                    rule(k) = ruleNames(kk);
+                    break
+                end
+            end
 
             reward_scale(k) = [logs.block(k).trial(1).rewardScale];
-
+            
+            %Block statistics
+            fwdIdx = forward & blockIdx==k; %Forward trials: mouse did not turn back
             nTrials(k) = numel(logs.block(k).trial);
             nCompleted(k) = sum(~omit & blockIdx==k);
             nForward(k) = sum(fwdIdx);
@@ -296,8 +334,9 @@ for i = 1:numel(subjects)
 
         %Store session data
         sessions(j) = struct(...
-            'session_date', datetime(data_files(j).session_date),...
+            'session_date', datetime(sessionDate),...
             'level', mazeLevel,...
+            'taskRule', rule,...
             'reward_scale', reward_scale,...
             'maxSkidAngle', maxSkidAngle,...
             'lCue',arrayfun(@(B) lCue(B), 1:numel(logs.block)),...
@@ -334,33 +373,4 @@ for i = 1:numel(subjects)
     end
 
     clearvars trials trialData sessions;
-end
-
-
-
-function log = removeEmpty(log, file_path)
-
-[~, name, ext] = fileparts(file_path);
-for i = 1:numel(log.block)
-    if any(isnan([log.block(i).trial.duration]))
-        warning('\n%s',...
-            ['Problem with ' name ext],...
-            ['Missing trial data in block ' num2str(i)],...
-            ['Trials have been omitted.']);
-        badTrials = isnan([log.block(i).trial.duration]);
-        log.block(i).trial =...
-            log.block(i).trial(~badTrials);
-    end
-end
-
-badBlocks = cellfun(@isempty,{log.block.trial});
-if any(badBlocks)
-    warning('\n%s',...
-        ['Problem with ' name ext]);
-    for i = find(badBlocks)
-        warning('\n%s',...
-            ['Block ' num2str(i),' is empty.'],...
-            ['Block has been omitted.']);
-    end
-    log.block = log.block(~badBlocks);
 end

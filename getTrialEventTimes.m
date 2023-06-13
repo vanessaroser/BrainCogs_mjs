@@ -39,23 +39,10 @@ for i = 1:numel(trials)
     eventTimes(i).start = getTrialIterationTime(log, blockIdx, i, 1); %Time of first iteration; needs correction in some cases because the reference time for trials(i).start changes after restarts, etc.
 
     %Visual and tactile cue onset times
-    cueOnsets = cellfun(@(C) C(C>0), trials(i).cueOnset, 'UniformOutput', false);
-    towerOnsets  = struct(...
-        'left', cueOnsets{Choice.L},...
-        'right', cueOnsets{Choice.R},...
-        'all', [cueOnsets{:}]);
-    fields = fieldnames(towerOnsets);
-    for j = 1:numel(fields)
-        if any(towerOnsets.(fields{j})>1) %If cues appear during run (rather than at start or not at all)
-            %Get iteration assoc with cue onset as time index
-            towerTimes.(fields{j}) = sort(eventTimes(i).start... %Use eventTimes.start (corrected) rather than raw 'start' times
-                + trials(i).time(towerOnsets.(fields{j})))';
-
-        else
-            towerTimes.(fields{j}) = [];
-        end
+    eventTimes(i).towers = getCueOnsetTimes(trials(i).time, eventTimes(i).start, trials(i).cueOnset);
+    if isfield(trials,"puffOnset")
+        eventTimes(i).puffs = getCueOnsetTimes(trials(i).time, eventTimes(i).start, trials(i).puffOnset);
     end
-    eventTimes(i).towerTimes      = towerTimes;
 
     %Outcome onset times
     eventTimes(i).outcome =  eventTimes(i).start + trials(i).time(trials(i).iterations); %Use eventTimes.start (corrected) rather than raw 'start' times
@@ -70,6 +57,23 @@ for i = 1:numel(trials)
         end
     end
 end
+
+function cue_onset_times = getCueOnsetTimes( trial_times, trial_start_time, trial_cue_onsets )
+    cue_onsets = cellfun(@(C) C(C>0), trial_cue_onsets, 'UniformOutput', false); %Remove zeros
+    cueOnsets  = struct(...
+        'left', cue_onsets{Choice.L},...
+        'right', cue_onsets{Choice.R},...
+        'all', [cue_onsets{:}]);
+    fields = fieldnames(cueOnsets);
+    for j = 1:numel(fields)
+        if any(cueOnsets.(fields{j})>1) %If cues appear during run (rather than at start or not at all)
+            %Get iteration assoc with cue onset as time index
+            cue_onset_times.(fields{j}) = sort(trial_start_time... %Use eventTimes.start (corrected) rather than raw 'start' times
+                + trial_times(cueOnsets.(fields{j})))';
+        else
+            cue_onset_times.(fields{j}) = NaN;
+        end
+    end
 
 % --- Notes -------
 
