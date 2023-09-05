@@ -15,7 +15,7 @@ end
 
 %Load remote file(s)
 data_dir = fetch(acquisition.SessionStarted & key, 'new_remote_path_behavior_file');
-path = string();
+path = string({data_dir.new_remote_path_behavior_file}');
 for i = 1:numel(data_dir)
     [~, path(i)] = lab.utils.get_path_from_official_dir(data_dir(i).new_remote_path_behavior_file);
 end

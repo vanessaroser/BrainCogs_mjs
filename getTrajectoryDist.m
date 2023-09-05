@@ -28,9 +28,10 @@ for i = 1:numel(S)
                 for k = 1:nBlocks
                     traj(j).nLeft(k) = size(traj(j).left.x_trajectory(k).data,2);
                     traj(j).nRight(k) = size(traj(j).right.x_trajectory(k).data,2);
-                    traj(j).level(k) = S(i).sessions(j).level(k);
+                    traj(j).level(k) = S(i).logs(j).block(k).mazeID;
                     traj(j).maze_length(k) = size(traj(j).left.x_trajectory(k).data,1);
-                    traj(j).maxSkidAngle(k) = S(i).sessions(j).maxSkidAngle(k);
+                    traj(j).maxSkidAngle(k) =...
+                        str2double(S(i).logs(j).version(end).mazes(S(i).logs(j).block(k).mazeID).variable.maxSkidAngle);
                 end
             end
    

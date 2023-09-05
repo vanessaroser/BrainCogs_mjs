@@ -111,19 +111,25 @@ function [ logs, excludeBlocks ] = excludeBadBlocks( logs )
             "mjs20_413",datetime('17-Mar-2022'),[2,3];... %Accidental T6 (26 trials), then aborted T7
             "mjs20_411",datetime('23-Mar-2022'),[1:4];... %Multiple restarts '220323 M411 T6 pseudorandom'
             "mjs20_411",datetime('13-Jun-2022'),[1];...   %Unsure why there are 2 blocks...
-            };
+           
 %     case 'mjs_tactile2visual'
+            "mjs20_24",datetime('30-Jul-2023'), 'all';...   %Accidentally started on maze level 8
+            "mjs20_24",datetime('31-Jul-2023'), [1,2];...   %Accidentally started on maze level 8
+            "mjs20_23",datetime('04-Aug-2023'), 'all';...   %Headplate holder arm twisted forward
+            "mjs20_23",datetime('09-Aug-2023'), 1;...   %Headplate holder arm twisted forward (again!)  
+            "mjs20_26",datetime('09-Aug-2023'), 'all';...   %Had already exceeded accuracy threshold of 80%
+            };
 
 %Remove specified blocks prior to session data extraction
 excludeBlocks = [];
 for i = 1:size(exclude,1)
     if ismember(logs.animal.name, exclude{i,1}) &&...
-            string(datetime(logs.session.start,'Format','dd-MMM-yyyy'))==exclude{i,2} &&...
+            string(datetime(logs.session(1).start,'Format','dd-MMM-yyyy'))==exclude{i,2} &&... %Session idx=1 for multiple sessions with same date
             strcmp(exclude{i,3},'all')
         logs = [];  %Exclude whole session
         return
     elseif ismember(logs.animal.name,exclude{i,1}) &&...
-            string(datetime(logs.session.start,'Format','dd-MMM-yyyy'))==exclude{i,2}
+            string(datetime(logs.session(1).start,'Format','dd-MMM-yyyy'))==exclude{i,2}
         excludeBlocks = exclude{i,3};
         return
     end

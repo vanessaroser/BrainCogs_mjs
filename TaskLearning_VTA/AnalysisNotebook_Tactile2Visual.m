@@ -15,34 +15,46 @@ matfiles = struct(...
     'motorTrajectory', fullfile(dirs.summary,'Motor_Trajectory.mat'));
 
 %Hyperparams
-dataSource = struct('remoteLogData',true,'experimentData',false,...
-    'localLogData',false,'DataJoint',false);
+dataSource = struct(...
+    'remoteLogData',true,...
+    'experimentData',false,...
+    'localLogData',false,...
+    'DataJoint',false);
 exe = struct(...
     'reloadData',           true,...
-    'updateExperData',      true,...
-    'motor_trajectory',     true,...
-    'model_strategy',       false);
+    'updateExperData',      false,...
+    'motor_trajectory',     false,...
+    'model_strategy',       true);
 plots = struct(...
     'motor_trajectory',                 false,...
     'collision_locations',              false,...
-    'trial_duration',                   true,...
+    'trial_duration',                   false,...
     'longitudinal_performance',         true,...
-    'longitudinal_glm_choice_outcome',  false,...
-    'glm_cueSide_priorChoice',          false,... %Probably not needed after including glm_choice_outcome
-    'glm_choice_outcome',               false,...
-    'group_performance',                true);
+    'longitudinal_glm',                 true,...
+    'group_performance',                false);
 
 %Subject info
 if exe.reloadData
     clearvars subjects;
     subjects = struct(...
-        'ID',       {"mjs20_21","mjs20_22","mjs20_23","mjs20_24","mjs20_25","mjs20_26"},...
-        'rigNum',   {"Bezos2", "Bezos2", "Bezos2", "Bezos2", "Bezos2", "Bezos2"},...
-        'startDate', datetime('2022-01-10'),...
+        'ID',       {...
+        "mjs20_22","mjs20_23",... %"mjs20_21"
+        "mjs20_24","mjs20_25","mjs20_26",...
+        "mjs20_102","mjs20_103","mjs20_105"...
+        },...
+        'rigNum',   {...
+        "Bezos2", "Bezos2",...
+        "Bezos2", "Bezos2", "Bezos2",...
+        "Bezos2", "Bezos2", "Bezos2"...
+        },...
+        'startDate', datetime('2023-01-10'),...
         'experimenter', 'mjs20',...
         'waterType', 'Milk');
     
     
+    %Restrict for Troubleshooting
+%     subjects = subjects(3);
+
     %Switch data source
     if dataSource.remoteLogData && ~dataSource.experimentData
         setupDataJoint_mjs();
@@ -65,12 +77,12 @@ if exe.reloadData
 end
 
 %Append Labels for Session Types
-subjects = getSessionLabels_TaskLearning_VTA(subjects);
+% subjects = getSessionLabels_TaskLearning_VTA(subjects);
 %Exclude warmup trials from correct rate for Sensory and Alternation Mazes
-subjects = filterSessionStats(subjects, 5);
+subjects = filterSessionStats(subjects);
 
 %Save experimental data to matfiles by subject
-if exe.updateExperData % && ~dataSource.experimentData
+if exe.updateExperData && ~dataSource.experimentData
     fnames = updateExperData(subjects,dirs);
 end
 
@@ -85,8 +97,7 @@ if exe.model_strategy
 end
 
 %Get Colors for Plotting
-cbrew = brewColorSwatches;
-colors = setPlotColors(cbrew,experiment);
+colors = setPlotColors(experiment);
 
 %Plot View-Angle and X-Trajectory for each session
 if plots.motor_trajectory
@@ -130,24 +141,24 @@ if plots.longitudinal_performance
     end
 end
 
-if plots.glm_choice_outcome
-    %For each session
-    saveDir = fullfile(dirs.results,'GLM_Choice_Outcome');
-    figs = fig_glm_choice_outcome(subjects,'glm3');
+if plots.longitudinal_glm
+    %Longitudinal
+    saveDir = fullfile(dirs.results,'GLM_TowerSide_PuffSide');
+    vars = {'towers','puffs','bias'};
+    figs = fig_longitudinal_glm( subjects, vars, 'glm1', colors );
+    save_multiplePlots(figs,saveDir);
+
+    saveDir = fullfile(dirs.results,'GLM_TowerSide_PuffSide_priorRewChoice');
+    vars = {'towers','puffs','priorChoice','bias'};
+    figs = fig_longitudinal_glm_cue_choice( subjects, vars, 'glm2', colors );
+    save_multiplePlots(figs,saveDir);
+    
+    saveDir = fullfile(dirs.results,'GLM_TowerSide_PuffSide_priorRewChoice');
+    vars = {'towers','puffs','priorRewChoice','priorUnrewChoice','bias'};
+    figs = fig_longitudinal_glm_cue_choice_outcome( subjects, vars, 'glm3', colors );
     save_multiplePlots(figs,saveDir);
     clearvars figs;
 end
-
-if plots.longitudinal_glm_choice_outcome
-    %Longitudinal
-    saveDir = fullfile(dirs.results,'GLM_Choice_Outcome');
-    vars = {'cueSide','rewChoice','unrewChoice','bias'};
-    figs{1} = fig_longitudinal_glm_choice_outcome( subjects, vars, colors );
-    figs{2} = fig_choice_autocorrelation(subjects);
-    save_multiplePlots([figs{:}],saveDir);
-    clearvars figs;
-end
-
 
 %Plot Group Learning Curve
 if plots.group_performance
@@ -165,9 +176,10 @@ if plots.group_performance
 end
 
 % ------------- NOTES ------
-% 220107 Started all subjects informally on Level 1 on (M412 & M413 w/ imaging)
-% 220110 Begin formal training
-% 220112 Imaged M412 to determine whether sufficient clearance was allowed for objective/FOV.
-% 220113 Switched from 2 1.5mm washers to 1 2mm washer. Headplate-to-ball elevation, approx. 27 mm.
-% 220317 Accidentally started M413 on T6 before resuming on T7...
-% 220318 Same thing...
+% 230727 Began using 35 psi for M102 to help with ball control
+% 230731 Same for M105  
+% 230801 Same for All
+%
+%230905 Cleaned up BehavioralState flow and implemented timing based on
+%beginning of each iteration rather than end (loggingIndices = vr.logger.logTick(vr, vr.sensorData)).
+

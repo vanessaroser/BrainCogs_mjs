@@ -25,12 +25,10 @@ for i = 1:numel(subjects)
         continue
     end
 
-
-
     %Load each matfile and aggregate into structure
     sessionDate = string(unique({data_files(:).session_date}));
     for j = 1:numel(sessionDate)
-        [ ~, logs ] = loadRemoteVRFile(subjectID, sessionDate(j));
+        [ dataPath, logs ] = loadRemoteVRFile(subjectID, sessionDate(j));
         if isempty(logs)
             continue
         end
@@ -52,19 +50,20 @@ for i = 1:numel(subjects)
         end
         logs = newlog;
 
-
         %Initialize output structures
         trialData(numel(sessionDate),1) = struct(...
             'session_date', [],'eventTimes',struct(),...
+            'towerPositions', [],'puffPositions', [],...
             'duration',[],'response_time',[],...
             'position',[],'velocity',[],'mean_velocity',[],...
             'x_trajectory',[],'theta_trajectory',[],'time_trajectory',[],'positionRange',[],...
             'collision_locations',[],'pSkid',[],'stuck_locations',[],'stuck_time',[]);
 
         trials(numel(sessionDate),1) = ...
-            struct('left',[],'right',[],'leftCue',[],'rightCue',[],... %logical
+            struct('left',[],'right',[],... %logical
+            'leftTowers',[],'rightTowers',[],'leftPuffs',[],'rightPuffs',[],... %logical
             'correct',[],'error',[],'omit',[],'congruent',[],'conflict',[],... %logical
-            'priorLeft',[],'priorRight',[],'priorCorrect',[],'priorError',[],...
+            'priorLeft',[],'priorRight',[],'priorCorrect',[],'priorError',[],... %logical
             'forward',[],'stuck',[],'exclude',[],...  %logical
             'level',[],'blockIdx',[]); %unsigned integer
 
@@ -77,6 +76,7 @@ for i = 1:numel(subjects)
             'maxCorrectMoving',NaN,'maxCorrectMoving_congruent',NaN,'maxCorrectMoving_conflict',NaN,...
             'median_velocity', [], 'median_pSkid',[],'median_stuckTime',[],...
             'bias', [],...
+            'excludeBlocks', [],...
             'new_remote_path_behavior_file', []);
 
         %Incorporate any new log variables created during experiment
@@ -137,6 +137,9 @@ for i = 1:numel(subjects)
             %Event times
             eventTimes(blockIdx==k,1) = getTrialEventTimes(logs, k); %Need logs and block idx for time, because restarts/new blocks cause divergent time references
 
+            %Cue positions
+            [towerPositions(blockIdx==k,1), puffPositions(blockIdx==k,1)] = getCuePositions(logs, k);
+
             %Time from trial start to choice & Duration including ITI
             response_time(blockIdx==k)  = arrayfun(@(idx) Trials(idx).time(Trials(idx).iterations), 1:numel(Trials));
             duration(blockIdx==k)  = [Trials.duration];
@@ -190,8 +193,10 @@ for i = 1:numel(subjects)
         end
 
         trialData(j) = struct(...
-            'session_date', datetime(sessionDate),...
+            'session_date', datetime(sessionDate(j)),...
             'eventTimes', eventTimes,...
+            'towerPositions', {towerPositions},...
+            'puffPositions', {puffPositions},...
             'duration', duration,...
             'response_time', response_time,...
             'position', {position},...
@@ -209,24 +214,22 @@ for i = 1:numel(subjects)
         %---Trial masks--------------------------------------------------------------------
 
         %Initialize
-        [left, right, leftTowers, rightTowers,...
+        [left, right, leftTowers, rightTowers,leftPuffs, rightPuffs,...
             correct, omit, congruent, conflict, forward, stuck] = deal(false(1,numel(blockIdx)));
 
         mazeLevel = [logs.block.mazeID];
         for k = 1:numel(logs.block)
             %Cues, choices, and outcomes
             Trials = logs.block(k).trial;
-            
+
             %Visual cues
             nTowers = cellfun(@numel,reshape([Trials.cuePos],2,numel(Trials)))';
-            leftTowers(blockIdx==k) = nTowers(:,1) > nTowers(:,2);
-            rightTowers(blockIdx==k) = nTowers(:,1) < nTowers(:,2);
-            
+            leftTowers(blockIdx==k) = nTowers(:,1) > nTowers(:,2); %Trials where towers rule instructs left (ie, nLeft>nRight)
+            rightTowers(blockIdx==k) = nTowers(:,1) < nTowers(:,2);%Towers rule indicates "right"
+
             %Tactile cues
-            [leftPuffs, rightPuffs] = deal(false(numel(Trials),1));
-            nPuffs = false(numel(Trials),2);
-            if isfield(Trials,"puffPos")
-                nPuffs = cellfun(@numel,reshape([Trials.puffPos],numel(Trials),2));
+            if isfield(Trials,"puffPos") && any(~cellfun(@isempty,[Trials.puffPos]))
+                nPuffs = cellfun(@numel,reshape([Trials.puffPos],2,numel(Trials)))';
                 leftPuffs(blockIdx==k) = nPuffs(:,1) > nPuffs(:,2);
                 rightPuffs(blockIdx==k) = nPuffs(:,1) < nPuffs(:,2);
             end
@@ -234,23 +237,30 @@ for i = 1:numel(subjects)
             %Choices
             left(blockIdx==k) = [Trials.choice]==Choice.L;
             right(blockIdx==k) = [Trials.choice]==Choice.R;
-            
+
             %Outcomes
             correct(blockIdx==k) = [Trials.choice]==[Trials.trialType];
             omit(blockIdx==k) = [Trials.choice]==Choice.nil;
-            
+
             %Trials where alternative rules agree or conflict
             %congruent(blockIdx==k) = int8([Trials.trialType]) == int8(rightTowers(blockIdx==k))+1; %L,R choice enumeration = 1,2
             %conflict(blockIdx==k) = ~congruent(blockIdx==k); %R,L choice enumeration = 1,2
             if isfield(Trials,"visualRule")...
-                    && all([Trials.visualRule]) || all([Trials.tactileRule])
-            
-            elseif isfield(Trials,"alternateTrials") && all([Trials.alternateTrials])
-
+                    && ~any([Trials.forcedChoice])... %Visual or Tactile rule
+                    && any([leftPuffs(blockIdx==k), rightPuffs(blockIdx==k)])... %Block has both Visual and Tactile cues 
+                    && any([leftTowers(blockIdx==k), rightTowers(blockIdx==k)])
+                congruent(blockIdx==k) = ...
+                    (leftPuffs(blockIdx==k)==leftTowers(blockIdx==k)) &...
+                    (rightPuffs(blockIdx==k)==rightTowers(blockIdx==k)); %should not incl any trials where nPuffs==0 or nTowers==0
+            elseif isfield(maze(k),"alternateTrials")...  %references logs because rulewas not included as a variable in cfg.trialData
+                    && str2double(maze(k).alternateTrials)
+                congruent(blockIdx==k) =...
+                    int8([Trials.trialType])-1 == int8(rightTowers(blockIdx==k)); %L,R choice enumeration = 1,2
             else %Sensory rule (vs Alternation) or forced choice
                 congruent(blockIdx==k) = true;
             end
-            
+            conflict(blockIdx==k) = ~congruent(blockIdx==k);
+
             %Trials where mouse turns greater than pi/2 rad L or R in cue or memory segment
             forward(blockIdx==k) = getStraightNarrowTrials({Trials.position},[0, lCue(k)]);
             %Trials where mouse gets stuck after collision along cue segment
@@ -258,15 +268,17 @@ for i = 1:numel(subjects)
             %Maze level
             level(blockIdx==k) = mazeLevel(k);
         end
+
+        %Trial masks for exclusions, etc.
         forward = forward & ~omit; %Exclude forward trials exceeding time limit
         err = ~correct & ~omit;
-
-        %Trial mask for exclusions
         exclude = omit | ~forward; %Additions made downstream, eg for warm-up blocks, etc
         exclude(ismember(blockIdx,excludeBlocks)) = true; %Exclude trials from blocks specified in excludeBadBlocks()
 
         trials(j) = struct(...
-            'left',left,'right',right,'leftCue',leftTowers,'rightCue',rightTowers,...
+            'left',left,'right',right,...
+            'leftTowers',leftTowers,'rightTowers',rightTowers,...
+            'leftPuffs',leftPuffs,'rightPuffs',rightPuffs,...
             'correct',correct,'error',err,'omit',omit,...
             'priorLeft',[0, left(1:end-1)],'priorRight',[0, right(1:end-1)],...
             'priorCorrect',[0, correct(1:end-1)],'priorError',[0, err(1:end-1)],...
@@ -278,16 +290,15 @@ for i = 1:numel(subjects)
         %---Session data------------------------------------------------------------------
 
         %Block data
-
-        [rule, reward_scale, nTrials, nCompleted, nForward,...         %Initialize
+        [reward_scale, nTrials, nCompleted, nForward,...         %Initialize
             pCorrect, pCorrect_congruent, pCorrect_conflict, pOmit, pStuck,...
             median_velocity, median_pSkid, median_stuckTime] = deal([]);
         maxCorrectMoving = struct('all',[],'congruent',[],'conflict',[]);
 
         ruleNames = ["forcedChoice","visualRule","tactileRule","alternateTrials"];
-        rule = [];
+        rule = strings(1,numel(logs.block));
         for k = 1:numel(logs.block)
-            %Task rule
+            %Task rule: tactile/visual task
             for kk = 1:numel(ruleNames)
                 if isfield(maze(k),ruleNames(kk)) && logical(str2double(maze(k).(ruleNames(kk))))
                     rule(k) = ruleNames(kk);
@@ -295,17 +306,27 @@ for i = 1:numel(subjects)
                 end
             end
 
+            if isfield(maze(k),"alternateTrials") && isempty(rule(k))
+                rule(k) = "sensory";
+            elseif rule(k)=="alternateTrials"
+                rule(k) = "alternation";
+            elseif rule(k)=="visualRule"
+                rule(k) = "visual";
+            elseif rule(k)=="tactileRule"
+                rule(k) = "tactile";
+            end
+
             reward_scale(k) = [logs.block(k).trial(1).rewardScale];
-            
+
             %Block statistics
             fwdIdx = forward & blockIdx==k; %Forward trials: mouse did not turn back
             nTrials(k) = numel(logs.block(k).trial);
             nCompleted(k) = sum(~omit & blockIdx==k);
             nForward(k) = sum(fwdIdx);
-            pCorrect(k) = mean(correct(~omit & blockIdx==k));
-            pCorrect_congruent(k) = mean(correct(~omit & congruent & blockIdx==k));
-            pCorrect_conflict(k) = mean(correct(~omit & conflict & blockIdx==k));
-            pOmit(k) = mean(omit & blockIdx==k);
+            pCorrect(k) = mean(correct(~exclude & blockIdx==k));
+            pCorrect_congruent(k) = mean(correct(~exclude & congruent & blockIdx==k));
+            pCorrect_conflict(k) = mean(correct(~exclude & conflict & blockIdx==k));
+            pOmit(k) = mean(omit(blockIdx==k));
             pStuck(k) = mean(stuck(~omit & blockIdx==k));
 
             median_velocity(k) = median(trialData(j).mean_velocity(fwdIdx,2)); %Median velocity across all completed trials (x,y,theta)
@@ -313,13 +334,13 @@ for i = 1:numel(subjects)
             median_stuckTime(k) = median(trialData(j).stuck_time,'omitnan');
 
             %Choice bias
-            leftError = sum(left(err & blockIdx==k))/sum(left(blockIdx==k));
-            rightError = sum(right(err & blockIdx==k))/sum(right(blockIdx==k));
+            leftError = sum(left(err & ~exclude & blockIdx==k))/sum(left(~exclude & blockIdx==k));
+            rightError = sum(right(err & ~exclude & blockIdx==k))/sum(right(~exclude & blockIdx==k));
             bias(k) = rightError-leftError;
 
             %Moving average correct rate
-            tempCorrect = double(correct(blockIdx==k));
-            tempCongruent = congruent(blockIdx==k);
+            tempCorrect = double(correct(blockIdx==k) & ~exclude(blockIdx==k));
+            tempCongruent = congruent(blockIdx==k) & ~exclude(blockIdx==k);
             hits = struct('all',tempCorrect,'congruent',tempCorrect,'conflict',tempCorrect);
             hits.congruent(~tempCongruent) = NaN;
             hits.conflict(tempCongruent) = NaN;
@@ -334,7 +355,7 @@ for i = 1:numel(subjects)
 
         %Store session data
         sessions(j) = struct(...
-            'session_date', datetime(sessionDate),...
+            'session_date', datetime(sessionDate(j)),...
             'level', mazeLevel,...
             'taskRule', rule,...
             'reward_scale', reward_scale,...
@@ -357,7 +378,10 @@ for i = 1:numel(subjects)
             'median_pSkid', median_pSkid,... %Mean proportion of maze where mouse skidded along walls
             'median_stuckTime', median_stuckTime,...
             'bias', bias,...
-            'new_remote_path_behavior_file', data_files(j).new_remote_path_behavior_file);
+            'excludeBlocks', excludeBlocks,...
+            'new_remote_path_behavior_file', dataPath);
+
+        clearvars eventTimes level bias;
     end
 
     %Assign fields to current subject

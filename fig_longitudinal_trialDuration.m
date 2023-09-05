@@ -12,7 +12,7 @@ shadeOffset = 0.2;
 transparency = 0.2;
 
 %Colors
-colors = setPlotColors(brewColorSwatches,experiment);
+colors = setPlotColors(experiment);
 prefix = 'trialDuration';
 
 figIdx = 1;
