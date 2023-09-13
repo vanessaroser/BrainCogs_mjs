@@ -118,6 +118,7 @@ function [ logs, excludeBlocks ] = excludeBadBlocks( logs )
             "mjs20_23",datetime('04-Aug-2023'), 'all';...   %Headplate holder arm twisted forward
             "mjs20_23",datetime('09-Aug-2023'), 1;...   %Headplate holder arm twisted forward (again!)  
             "mjs20_26",datetime('09-Aug-2023'), 'all';...   %Had already exceeded accuracy threshold of 80%
+            "mjs20_23",datetime('01-Sep-2023'), 'all'... %Extra training and reworked code to include iOutcome in log.block (and removed iBlank) 
             };
 
 %Remove specified blocks prior to session data extraction

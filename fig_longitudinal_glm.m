@@ -106,10 +106,14 @@ for i = 1:numel(subjects)
     end
      
     %Simplify markers/colors for >2 vars
-    symbols = {'o','o','^','_'};
+    symbols = {'o','o','^'};
     faceColor = {colors.predictor.(vars{1}),'none','none','none','none'};
     for j = 1:numel(vars)
-        set(p(j),'Marker',symbols{j},'MarkerSize',8,'LineWidth',lineWidth);
+        mkr = symbols{min(j,numel(symbols))};
+        if strcmp(vars{j},'bias')
+            mkr = '_';         
+        end
+        set(p(j),'Marker',mkr,'MarkerSize',8,'LineWidth',lineWidth);
         p(j).MarkerFaceColor = faceColor{j};
     end
 

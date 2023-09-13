@@ -224,7 +224,7 @@ regStruct.name              = strjoin(pNames(pNames~="bias"),'_');
 regStruct.predictors        = pNames;
 
 %Regression stats: beta, p, se
-for P = pNames %f = string(fieldnames(idx)) 
+for P = string(fieldnames(X))' %f = string(fieldnames(idx)) 
     if ~isempty(idx.(P))
         regStruct.(P) = struct(...
             'beta', stats.beta(idx.(P))',...
