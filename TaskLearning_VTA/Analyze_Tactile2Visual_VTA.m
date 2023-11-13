@@ -1,10 +1,9 @@
 %---------------------------------------------------------------------------------------------------
 % analyze_TaskLearning_VTA1
 %
-% PURPOSE: To analyze simultaneous imaging and virtual maze running behavior.
+% PURPOSE: To analyze simultaneous Ca++ imaging and virtual maze running behavior.
 %
-% AUTHOR: MJ Siniscalchi, Princeton Neuroscience Institute, 220404
-%           -based on previous work in Kwan Lab at Yale
+% AUTHOR: MJ Siniscalchi, Princeton Neuroscience Institute, 230918
 %
 % NOTES:
 %           * If neuropil (background) masks are not generated after cell selection in cellROI.m,
@@ -13,9 +12,7 @@
 %
 %---------------------------------------------------------------------------------------------------
 
-% *** Revision Notes ***
-% - Block Exclusions should flow to trials.exclude-- so that I2C Data remain consistent.
-function analyze_TaskLearning_VTA1( search_filter )
+function Analyze_Tactile2Visual_VTA( search_filter )
 
 % Set path
 dirs = getRoots();
@@ -24,12 +21,12 @@ addGitRepo(dirs,'General','iCorre-Registration','BrainCogs_mjs','TankMouseVR','U
 addpath(genpath(fullfile(dirs.code, 'mym', 'distribution', 'mexa64')));
 
 % Session-specific metadata
-[dirs, expData] = expData_TaskLearning_VTA1(dirs);
+[dirs, expData] = expData_Tactile2Visual_VTA(dirs);
 expData = expData(contains({expData(:).sub_dir}', search_filter)); %Filter by data-directory name, etc.
 
 % Set parameters for analysis
-experiment = 'mjs_taskLearning_VTA_1'; %If empty, fetch data from all experiments
-[calculate, summarize, figures, mat_file, params] = params_TaskLearning_VTA1(dirs, expData);
+experiment = 'mjs_tactile2visual'; %If empty, fetch data from all experiments
+[calculate, summarize, figures, mat_file, params] = params_Tactile2Visual_VTA(dirs, expData);
 expData = get_imgPaths(dirs, expData, calculate, figures); %Append additional paths for imaging data if required by 'calculate'
 
 % Generate directory structure

@@ -33,8 +33,8 @@ for i = 1:numel(subjects)
     sessionType = [sessions.taskRule];
 
     levels = cellfun(@(L) L(end),{sessions.level});
-    levels(sessionType=="alternation")=9; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
-    levels(sessionType=="visual" & levels==6)=10; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
+    levels(sessionType=="alternation")=98; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
+    levels(sessionType=="visual" & levels==6)=99; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
     values = unique(levels);
     shading = gobjects(0);
     for j = 1:numel(values)
@@ -125,7 +125,7 @@ for i = 1:numel(subjects)
     elseif ismember(vars{j},{'R_predictors', 'R_cue_choice', 'R_priorChoice_choice'})
         ylim([-1, 1]);
     elseif ismember(vars{j}, predictorNames)
-        ylim([-5, 5]);
+        ylim([-4, 4]);
     else
         rng = max(cellfun(@max,data))-min(cellfun(@min,data));
         ylim([min(cellfun(@min,data)),max(cellfun(@max,data))] + 0.1*rng*[-1,1]);

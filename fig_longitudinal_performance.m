@@ -25,12 +25,12 @@ for i = 1:numel(subjects)
     tiledlayout(1,1);
     ax = nexttile();
     hold on;
-    
+
     % Shade according to different phases of training
     sessionType = [subjects(i).sessions.taskRule];
     levels = cellfun(@(L) L(end),{subjects(i).sessions.level});
-    levels(sessionType=="alternation")=9; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
-    levels(sessionType=="visual" & levels==6)=10; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
+    levels(sessionType=="alternation")=98; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
+    levels(sessionType=="visual" & levels==6)=99; %**TEMPORARY for mixed Alt/Tactile/Vis cohort
     values = unique(levels);
     shading = gobjects(0);
     for j = 1:numel(values)
@@ -38,16 +38,16 @@ for i = 1:numel(subjects)
         pastLevels = levels>=values(j) & sessionType==sameType;% Sessions at each level
         alpha = transparency;
         if unique(levels(sessionType==sameType))==values(j)
-        	alpha = 2*transparency;
+            alpha = 2*transparency;
         end
         patches = shadeDomain(find(pastLevels),...
             ylim, shadeOffset, colors.taskRule.(sameType), alpha);
-        shading(numel(shading)+(1:numel(patches))) = patches; 
+        shading(numel(shading)+(1:numel(patches))) = patches;
     end
-    
+
     %Line at 0.5 for proportional quantities
     allProportional = all(ismember(vars,{'pCorrect','pCorrect_congruent','pCorrect_conflict','pOmit',...
-            'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict','bias'}));
+        'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict','bias'}));
     X = 1:numel(subjects(i).sessions);
     if allProportional
         plot([0,X(end)+1],[0.5, 0.5],...
@@ -62,7 +62,7 @@ for i = 1:numel(subjects)
         plot([0,X(end)+1],[0.8, 0.8],':k','LineWidth',1); %Threshold correct rate
         plot([0,X(end)+1],[0.1, 0.1],':k','LineWidth',1); %Threshold bias
     end
-    
+
     yyax = {'left','right'};
     for j = 1:numel(vars)
         %Dual Y-axes
@@ -70,11 +70,11 @@ for i = 1:numel(subjects)
             yyaxis(ax,yyax{j});
             ax.YAxis(j).Color = colors.(vars{j});
         end
-        
+
         p(j) = plot(X, [subjects(i).sessions.(vars{j})],...
             '.','MarkerSize',20,'Color',colors.(vars{j}),...
             'LineWidth',lineWidth,'LineStyle','none');
-        
+
         marker = {'o','o','_'};
         faceColor = {colors.(vars{j}),'none','none'};
         if numel(vars)>1 %&& isequal(colors.(vars{j}),colors.(vars{j-1}))
@@ -84,9 +84,9 @@ for i = 1:numel(subjects)
                 'LineWidth',lineWidth);
             if j==numel(vars)
                 if isequal(vars,{'pCorrect','pCorrect_conflict'})
-                        legend(p,{'All','Conflict'},'Location','best','Interpreter','none');
+                    legend(p,{'All','Conflict'},'Location','best','Interpreter','none');
                 elseif isequal(vars,{'pCorrect_congruent','pCorrect_conflict'})
-                        legend(p,{'Congruent','Conflict'},'Location','best','Interpreter','none');
+                    legend(p,{'Congruent','Conflict'},'Location','best','Interpreter','none');
                 elseif isequal(vars,{'maxCorrectMoving_congruent','maxCorrectMoving_conflict'})
                     legend(p,{'Congruent','Conflict','All'},'Location','best','Interpreter','none');
                 else
@@ -132,7 +132,7 @@ for i = 1:numel(subjects)
                 scatter(X(p(j).YData>0),p(j).YData(p(j).YData>0),...
                     '>','MarkerFaceColor','none','MarkerEdgeColor',p(j).Color);
                 ylabel('Bias');
-%                 legend(p); %Only include the specified variables in legend
+                %                 legend(p); %Only include the specified variables in legend
         end
     end
 
@@ -141,13 +141,13 @@ for i = 1:numel(subjects)
     plot(changePt,0,'k+');
 
     %Only include the specified variables in legend
-    legend(p); 
+    legend(p);
 
     %Cutoff L-maze data
     zoom2TMaze = false; %Cutoff L-maze data
     if all(ismember(vars,{'pCorrect','pCorrect_conflict','pCorrect_congruent',...
             'maxCorrectMoving','maxCorrectMoving_congruent','maxCorrectMoving_conflict'}))
-        zoom2TMaze = true; 
+        zoom2TMaze = true;
         sessionType(sessionType=="forcedChoice") = "";
     end
 
@@ -164,16 +164,16 @@ for i = 1:numel(subjects)
 
     %Labels and titles
     xlabel('Session number');
-    
+
     title(subjects(i).ID,'interpreter','none');
-    
+
     %Add labels for maze-type/rule
     typeLabels = unique(sessionType,'stable');
     typeLabels = typeLabels(typeLabels~="");
     txtX = arrayfun(@(idx) find(sessionType==typeLabels(idx),1,'first'), 1:numel(typeLabels));
-    txtY = min(ylim)+[1,2,1].*...
-        0.1*(max(ylim)-min(ylim));
-%     yyaxis left;
+    txtY = min(ylim)+(1:numel(typeLabels)).*0.05*(max(ylim)-min(ylim));
+    %     yyaxis left;
+    txt = gobjects(numel(typeLabels),1);
     for j = 1:numel(typeLabels)
         txt(j) = text(txtX(j),txtY(j),typeLabels(j),...
             'Color',colors.taskRule.(typeLabels(j)),...
@@ -181,7 +181,7 @@ for i = 1:numel(subjects)
     end
     txt(end).HorizontalAlignment='right';
     txt(end).Position(1) = find(sessionType==typeLabels(end),1,'last');
-    
+
     %Adjust height of shading as necessary
     newVert = [max([ax.YAxis.Limits]),max([ax.YAxis.Limits]),min([ax.YAxis.Limits]),min([ax.YAxis.Limits])]; %Might need ax.YAxis(i).Limits...
     for j = 1:numel(shading)

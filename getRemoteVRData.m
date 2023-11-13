@@ -295,6 +295,11 @@ for i = 1:numel(subjects)
             median_velocity, median_pSkid, median_stuckTime] = deal([]);
         maxCorrectMoving = struct('all',[],'congruent',[],'conflict',[]);
 
+%Debug
+% if j==61
+%     dbstop
+% end
+
         ruleNames = ["forcedChoice","visualRule","tactileRule","alternateTrials"];
         rule = strings(1,numel(logs.block));
         for k = 1:numel(logs.block)
