@@ -39,6 +39,7 @@ for i = 1:numel(subjects)
     shading = gobjects(0);
     for j = 1:numel(values)
         sameType = unique(sessionType(levels==values(j)));
+        sameType = sameType(1);
         pastLevels = levels>=values(j) & sessionType==sameType;% Sessions at each level
         alpha = transparency;
         if unique(levels(sessionType==sameType))==values(j)
@@ -101,17 +102,17 @@ for i = 1:numel(subjects)
                     ylabel('Regression Coef.');
             end
         end
-        p(j) = plot(X, data{j},'.','MarkerSize',20,'Color',colors.predictor.(vars{j}),...
-            'LineWidth',lineWidth,'LineStyle','none');
+        p(j) = plot(X, data{j},'.','MarkerSize',8,'Color',colors.predictor.(vars{j}),...
+            'LineWidth',lineWidth,'LineStyle','-');
     end
      
     %Simplify markers/colors for >2 vars
-    symbols = {'o','o','^'};
+    symbols = {'.','.','.'};
     faceColor = {colors.predictor.(vars{1}),'none','none','none','none'};
     for j = 1:numel(vars)
         mkr = symbols{min(j,numel(symbols))};
         if strcmp(vars{j},'bias')
-            mkr = '_';         
+            mkr = '.';         
         end
         set(p(j),'Marker',mkr,'MarkerSize',8,'LineWidth',lineWidth);
         p(j).MarkerFaceColor = faceColor{j};

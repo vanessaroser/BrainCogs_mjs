@@ -35,6 +35,7 @@ for i = 1:numel(subjects)
     shading = gobjects(0);
     for j = 1:numel(values)
         sameType = unique(sessionType(levels==values(j)));
+        sameType = sameType(1);
         pastLevels = levels>=values(j) & sessionType==sameType;% Sessions at each level
         alpha = transparency;
         if unique(levels(sessionType==sameType))==values(j)
@@ -70,12 +71,15 @@ for i = 1:numel(subjects)
             yyaxis(ax,yyax{j});
             ax.YAxis(j).Color = colors.(vars{j});
         end
+        %vmr
+        plot_vars = [subjects(i).sessions.(vars{j})];
+        %remove NaN for early mazes
+        plot_vars(~isnan(plot_vars));
+        p(j) = plot(X, plot_vars,...
+            '.','MarkerSize',8,'Color',colors.(vars{j}),...
+            'LineWidth',lineWidth,'LineStyle','-');
         
-        p(j) = plot(X, [subjects(i).sessions.(vars{j})],...
-            '.','MarkerSize',20,'Color',colors.(vars{j}),...
-            'LineWidth',lineWidth,'LineStyle','none');
-        
-        marker = {'o','o','_'};
+        marker = {'.','.','_'};
         faceColor = {colors.(vars{j}),'none','none'};
         if numel(vars)>1 %&& isequal(colors.(vars{j}),colors.(vars{j-1}))
             set(p(j),'Marker',marker{j},...
@@ -84,14 +88,14 @@ for i = 1:numel(subjects)
                 'LineWidth',lineWidth);
             if j==numel(vars)
                 if isequal(vars,{'pCorrect','pCorrect_conflict'})
-                        legend(p,{'All','Conflict'},'Location','best','Interpreter','none');
+                        legend(p,{'All','Conflict'},'Location','northeastoutside','Interpreter','none');
                 elseif isequal(vars,{'pCorrect_congruent','pCorrect_conflict'})
-                        legend(p,{'Congruent','Conflict'},'Location','best','Interpreter','none');
+                        legend(p,{'Congruent','Conflict'},'Location','northeastoutside','Interpreter','none');
                 elseif isequal(vars,{'maxCorrectMoving_congruent','maxCorrectMoving_conflict'})
-                    legend(p,{'Congruent','Conflict','All'},'Location','best','Interpreter','none');
+                    legend(p,{'Congruent','Conflict','All'},'Location','northeastoutside','Interpreter','none');
                 else
                     legendVars = cellfun(@(C) ~all(isnan([subjects(i).sessions.(C)])), vars);
-                    legend(p,vars{legendVars},'Location','best','Interpreter','none');
+                    legend(p,vars{legendVars},'Location','northeastoutside','Interpreter','none');
                 end
             end
         end
